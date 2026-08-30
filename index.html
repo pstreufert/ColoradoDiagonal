@@ -1245,7 +1245,7 @@ function getLiveRouteState(lat, lon) {
 }
 
 function legLabelFromState(state) {
-  if (!state.onRoute) return 'Off route';
+  if (!state.onRoute) return 'Sidequesting';
   return `Riding \u00b7 ${state.chapter.title}`;
 }
 
