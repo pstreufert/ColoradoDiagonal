@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Colorado Diagonal</title>
+<meta name="description" content="A line cut across Colorado in five legs: from the high plains at the Nebraska line, through Denver, and up into the San Juans, finishing near the Four Corners.">
+<meta property="og:title" content="The Colorado Diagonal">
+<meta property="og:description" content="A line cut across Colorado in five legs: from the high plains at the Nebraska line, through Denver, and up into the San Juans, finishing near the Four Corners.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="The Colorado Diagonal">
+<meta name="twitter:description" content="A line cut across Colorado in five legs: from the high plains at the Nebraska line, through Denver, and up into the San Juans, finishing near the Four Corners.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/5.7.3/maplibre-gl.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/5.7.3/maplibre-gl.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/scrollama/3.2.0/scrollama.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink: #1D2420;
+    --ink-2: #262F29;
+    --paper: #EAE1C7;
+    --paper-dim: #C6B98F;
+    --ochre: #BE7C2B;
+    --ochre-dim: #8C5A1E;
+    --line: #5C6B5E;
+    --text-on-paper: #241D12;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--ink);color:var(--paper);font-family:'Newsreader',serif;}
+  ::selection{background:var(--ochre);color:var(--paper);}
+
+  #map{position:fixed;inset:0;width:100%;height:100%;}
+  #map-veil{position:fixed;inset:0;pointer-events:none;background:linear-gradient(180deg, rgba(29,36,32,0.55) 0%, rgba(29,36,32,0.05) 18%, rgba(29,36,32,0.05) 82%, rgba(38,47,41,0.9) 100%);z-index:2;}
+
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--ochre);
+  }
+
+  /* ---------- HERO ---------- */
+  #hero{
+    position:relative;z-index:5;
+    min-height:100vh;
+    display:flex;flex-direction:column;justify-content:center;
+    padding:8vh 6vw 6vh;
+  }
+  #hero .kicker{margin-bottom:18px;}
+  .hero-title-plate{
+    position:relative;
+    max-width:640px;
+    margin-bottom:36px;
+  }
+  .hero-title-plate::before{
+    content:"";
+    position:absolute;
+    inset:-36px;
+    background:#fafaf6;
+    filter:blur(38px);
+    opacity:0.5;
+    z-index:-1;
+    border-radius:40%;
+    pointer-events:none;
+  }
+  .hero-title-plate .eyebrow{
+    color:#6b5f42;
+    margin-bottom:14px;
+  }
+  #hero h1{
+    font-family:'Big Shoulders Display',sans-serif;
+    font-weight:800;
+    font-size:clamp(2.6rem, 7vw, 6.2rem);
+    line-height:0.94;
+    letter-spacing:-0.01em;
+    margin:0 0 18px;
+    color:var(--text-on-paper);
+    max-width:15ch;
+  }
+  #hero h1 em{
+    font-style:normal;color:var(--ochre);
+  }
+  #hero .sub{
+    font-size:clamp(1.05rem,1.6vw,1.35rem);
+    max-width:46ch;
+    color:#3A3324;
+    line-height:1.5;
+    margin:0;
+  }
+  .stamp{
+    display:inline-grid;
+    grid-template-columns:repeat(3,auto);
+    gap:0;
+    border:1.5px solid var(--paper-dim);
+    background:rgba(234,225,199,0.92);
+    backdrop-filter:blur(4px);
+    width:fit-content;
+    box-shadow:0 10px 30px rgba(0,0,0,0.25);
+  }
+  .stamp .cell{
+    padding:16px 26px;
+    border-right:1.5px solid var(--paper-dim);
+  }
+  .stamp .cell:last-child{border-right:none;}
+  .stamp .num{
+    font-family:'JetBrains Mono',monospace;
+    font-size:1.6rem;font-weight:600;color:var(--text-on-paper);
+    display:block;
+  }
+  .stamp .lbl{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;letter-spacing:0.1em;text-transform:uppercase;
+    color:var(--ochre-dim);margin-top:5px;display:block;
+  }
+  .cue-row{
+    margin-top:56px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  }
+  .scroll-cue{
+    font-family:'JetBrains Mono',monospace;font-size:12px;
+    color:#4A4A4A;letter-spacing:0.08em;
+    display:flex;align-items:center;gap:10px;
+  }
+  .scroll-cue .arrow{animation:bob 1.8s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(6px);}}
+  .scroll-cue.live-cue{cursor:pointer;transition:opacity .4s ease;}
+  .scroll-cue.live-cue.hidden{opacity:0;pointer-events:none;}
+
+  /* ---------- CHAPTERS ---------- */
+  #story{position:relative;z-index:5;}
+  .chapter{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    padding:6vh 6vw;
+  }
+  .chapter .card{
+    max-width:460px;
+    background:var(--paper);
+    color:var(--text-on-paper);
+    padding:34px 34px 26px;
+    box-shadow:0 18px 50px rgba(0,0,0,0.4);
+    border-top:5px solid var(--ochre);
+    position:relative;
+  }
+  .card .legkind{
+    font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:0.1em;text-transform:uppercase;
+    color:#6b5f42;margin-bottom:10px;display:flex;align-items:center;gap:8px;
+  }
+  .card .legkind .dot{width:8px;height:8px;border-radius:50%;background:var(--ochre);display:inline-block;}
+  .card h2{
+    font-family:'Big Shoulders Display',sans-serif;
+    font-weight:700;font-size:2rem;line-height:1.02;margin:0 0 14px;
+  }
+  .card p{font-size:1rem;line-height:1.55;margin:0 0 12px;color:#3A3324;}
+  .card .miles-row{
+    margin-top:18px;padding-top:14px;border-top:1px solid #c2b585;
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .card .miles-row .seg-mi{font-size:0.85rem;color:#6b5f42;}
+  .card .miles-row .cum-mi{font-size:0.85rem;color:#6b5f42;text-align:right;}
+  .card .miles-row .cum-mi b{color:var(--text-on-paper);font-size:1rem;}
+
+  #elevationProfile{
+    position:fixed;left:0;bottom:0;width:100%;height:90px;z-index:6;
+    pointer-events:none;
+  }
+  #profileBg{fill:rgba(234,225,199,0.14);}
+  #profileFg{fill:#ffffff;}
+  #traceLine{stroke-width:2.5;vector-effect:non-scaling-stroke;}
+  #peakLabels{position:fixed;left:0;bottom:0;width:100%;height:90px;z-index:6;pointer-events:none;}
+  .peak-label{
+    position:absolute;
+    transform:rotate(-38deg);
+    transform-origin:left bottom;
+    font-family:'JetBrains Mono',monospace;font-weight:300;font-size:11px;
+    letter-spacing:0.04em;color:#ffffff;white-space:nowrap;
+    opacity:0;transition:opacity .6s ease;
+    text-shadow:0 1px 3px rgba(0,0,0,0.6);
+  }
+  #peakLabels.visible .peak-label{opacity:0.85;}
+
+  #liveLocationBtn{
+    position:fixed;top:24px;right:24px;z-index:9;
+    display:flex;align-items:center;gap:10px;
+    background:var(--paper);
+    border:1px solid var(--paper);
+    border-left:3px solid var(--ochre);
+    color:var(--text-on-paper);
+    padding:10px 18px 10px 14px;
+    border-radius:6px;
+    font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.04em;
+    cursor:pointer;
+    box-shadow:0 8px 24px rgba(0,0,0,0.35);
+    transition:opacity .4s ease, transform .15s ease;
+  }
+  #liveLocationBtn:hover{transform:translateY(-1px);}
+  #liveLocationBtn.hidden{opacity:0;pointer-events:none;transform:translateY(-6px);}
+  #liveLocationBtn .dot-icon{
+    width:9px;height:9px;border-radius:50%;
+    background:var(--ochre);
+    box-shadow:0 0 0 rgba(190,124,43,0.6);
+    animation:liveDotPulse 2s infinite;
+    flex-shrink:0;
+  }
+  @keyframes liveDotPulse{
+    0%{box-shadow:0 0 0 0 rgba(190,124,43,0.55);}
+    70%{box-shadow:0 0 0 9px rgba(190,124,43,0);}
+    100%{box-shadow:0 0 0 0 rgba(190,124,43,0);}
+  }
+
+  #liveLocationPopup{
+    position:fixed;top:76px;right:24px;z-index:9;
+    width:260px;
+    background:rgba(29,36,32,0.95);
+    border:1px solid var(--line);
+    border-left:4px solid var(--ochre);
+    border-radius:6px;
+    padding:16px 18px;
+    color:var(--paper);
+    font-family:'JetBrains Mono',monospace;
+    box-shadow:0 12px 32px rgba(0,0,0,0.45);
+    backdrop-filter:blur(4px);
+    opacity:1;transform:translateY(0);
+    transition:opacity .3s ease, transform .3s ease;
+  }
+  #liveLocationPopup.hidden{opacity:0;transform:translateY(-8px);pointer-events:none;}
+  #liveLocationPopup .pop-eyebrow{
+    font-size:10px;letter-spacing:0.12em;color:var(--ochre);margin-bottom:8px;
+  }
+  #liveLocationPopup .pop-name{
+    font-size:11px;color:var(--paper-dim);margin-bottom:4px;
+  }
+  #liveLocationPopup .pop-leg{
+    font-family:'Big Shoulders Display',sans-serif;font-weight:700;
+    font-size:19px;line-height:1.15;color:var(--paper);
+    margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--line);
+  }
+  #liveLocationPopup .pop-row{
+    display:flex;justify-content:space-between;gap:10px;
+    font-size:11.5px;margin:6px 0;
+  }
+  #liveLocationPopup .pop-label{color:#a8a190;}
+  #liveLocationClose{
+    position:absolute;top:8px;right:10px;
+    background:none;border:none;color:var(--paper-dim);
+    font-size:18px;line-height:1;cursor:pointer;padding:4px;
+  }
+  #liveLocationClose:hover{color:var(--paper);}
+
+  @media (max-width:640px){
+    #liveLocationBtn{display:none;}
+    #liveCueDesktop{display:none;}
+    .scroll-cue.live-clickable{cursor:pointer;}
+    #liveLocationPopup{
+      top:auto;bottom:100px;right:16px;left:16px;width:auto;
+      padding:8px 10px;
+    }
+    #liveLocationPopup .pop-eyebrow,
+    #liveLocationPopup .pop-name{display:none;}
+    #liveLocationPopup .pop-leg{
+      font-size:13px;line-height:1.1;margin-bottom:3px;padding-bottom:3px;
+    }
+    #liveLocationPopup .pop-row{font-size:9.5px;margin:1px 0;}
+    #liveLocationPopup .pop-row:first-of-type{display:none;}
+    #liveLocationClose{top:4px;right:6px;font-size:16px;padding:2px;}
+    .chapter{padding:4vh 5vw;}
+    .chapter .card{max-width:100%;padding:18px 16px 14px;}
+    .card h2{font-size:1.55rem;margin:0 0 10px;}
+    .card p{font-size:0.9rem;line-height:1.45;margin:0 0 8px;}
+    .card .legkind{margin-bottom:6px;font-size:10px;}
+    .card .miles-row{margin-top:12px;padding-top:10px;}
+    .stamp{grid-template-columns:repeat(2,auto);}
+    #peakLabels{display:none;}
+  }
+
+  /* ---------- OUTRO / CTA ---------- */
+  #outro{
+    position:relative;z-index:5;min-height:100vh;
+    display:flex;flex-direction:column;justify-content:center;
+    padding:38vh 6vw 12vh;
+    background:linear-gradient(180deg, rgba(38,47,41,0) 0%, rgba(38,47,41,0.55) 15%, rgba(38,47,41,1) 30%);
+  }
+  #outro .outro-grid{
+    display:grid;
+    grid-template-columns:1.1fr 0.9fr;
+    gap:56px;
+    align-items:start;
+    max-width:1180px;
+  }
+  #outro .outro-text{min-width:0;}
+  #outro .eyebrow{margin-bottom:16px;}
+  #outro h2{
+    font-family:'Big Shoulders Display',sans-serif;
+    font-weight:800;font-size:clamp(2rem,4.6vw,3.4rem);line-height:1.02;
+    margin:0 0 20px;max-width:none;color:var(--paper);
+  }
+  #outro p{font-size:1.05rem;line-height:1.6;max-width:52ch;color:#cfc7ac;margin:0 0 30px;}
+  #outro .outro-stats{
+    display:flex;gap:36px;flex-wrap:wrap;margin-bottom:34px;
+  }
+  #outro .outro-stats .cell{border-left:2px solid var(--ochre);padding-left:14px;}
+  #outro .outro-stats .num{
+    font-family:'JetBrains Mono',monospace;font-size:1.3rem;font-weight:600;color:var(--paper);display:block;
+  }
+  #outro .outro-stats .lbl{
+    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;
+    color:var(--paper-dim);margin-top:3px;display:block;
+  }
+  #outro .cta-row{display:flex;gap:14px;flex-wrap:wrap;align-items:center;}
+  #outro .cta{
+    font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.06em;text-transform:uppercase;
+    color:var(--ink);background:var(--ochre);padding:14px 22px;border-radius:3px;
+    text-decoration:none;display:inline-block;transition:transform .15s ease, background .2s ease;
+  }
+  #outro .cta:hover{transform:translateY(-1px);background:#D08F3C;}
+  #outro .cta.secondary{
+    background:transparent;color:var(--paper);border:1px solid var(--paper-dim);
+  }
+  #outro .cta.secondary:hover{background:rgba(255,255,255,0.06);}
+  #liveLocationBtnBottom{cursor:pointer;-webkit-appearance:none;appearance:none;}
+  #liveLocationBtnBottom{
+    display:inline-flex;align-items:center;gap:9px;
+    transition:opacity .4s ease, transform .2s ease;
+  }
+  #liveLocationBtnBottom.hidden{opacity:0;pointer-events:none;transform:translateY(4px);}
+  #liveLocationBtnBottom .dot-icon{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--ochre);
+    animation:liveDotPulse 2s infinite;
+    flex-shrink:0;
+  }
+  #outro .credit-btn{
+    display:inline-flex;align-items:center;gap:8px;
+    margin-top:14px;
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;
+    color:var(--paper-dim);text-decoration:none;
+    border:1px solid rgba(234,225,199,0.25);border-radius:3px;
+    padding:9px 16px;
+    transition:border-color .2s ease, color .2s ease;
+  }
+  #outro .credit-btn:hover{border-color:var(--ochre);color:var(--paper);}
+
+  .outro-map{position:sticky;top:10vh;}
+  .outro-map svg{width:100%;height:auto;display:block;}
+
+  @media (max-width:900px){
+    #outro .outro-grid{grid-template-columns:1fr;gap:36px;}
+    .outro-map{position:static;max-width:360px;}
+  }
+</style>
+</head>
+
+<body>
+
+<div id="map"></div>
+<div id="map-veil"></div>
+
+<svg id="elevationProfile" viewBox="0 0 1000 90" preserveAspectRatio="none">
+  <defs>
+    <clipPath id="progressClip"><rect id="progressClipRect" x="0" y="0" width="0" height="90"/></clipPath>
+    <linearGradient id="traceGradient" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="0">
+      <stop id="traceStopStart" offset="0" stop-color="#ffffff"></stop>
+      <stop id="traceStopEnd" offset="1" stop-color="#BE7C2B"></stop>
+    </linearGradient>
+  </defs>
+  <path id="profileBg" d=""></path>
+  <path id="profileFg" d="" clip-path="url(#progressClip)"></path>
+  <path id="traceLine" d="" fill="none" stroke="url(#traceGradient)" clip-path="url(#progressClip)"></path>
+</svg>
+<div id="peakLabels"></div>
+
+<button id="liveLocationBtn" class="hidden">
+  <span class="dot-icon"></span>
+  <span class="btn-text">Where are they now?</span>
+</button>
+
+<div id="liveLocationPopup" class="hidden">
+  <button id="liveLocationClose" aria-label="Close">&times;</button>
+  <div class="pop-eyebrow">LIVE POSITION</div>
+  <div class="pop-name" id="popName">&mdash;</div>
+  <div class="pop-leg" id="popLeg">&mdash;</div>
+  <div class="pop-row"><span class="pop-label">Coordinates</span><span id="popCoords">&mdash;</span></div>
+  <div class="pop-row"><span class="pop-label">Last ping</span><span id="popTime">&mdash;</span></div>
+</div>
+
+<div id="hero">
+  <div class="hero-title-plate">
+    <div class="eyebrow kicker">RODEO LABS</div>
+    <h1>The Colorado <em>Diagonal</em></h1>
+    <p class="sub">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+  </div>
+  <div class="stamp" id="statStamp">
+    <div class="cell"><span class="num" id="statMiles">&mdash;</span><span class="lbl">Total Miles</span></div>
+    <div class="cell"><span class="num">Sep 3&ndash;7</span><span class="lbl">Expedition Dates</span></div>
+    <div class="cell"><span class="num" id="statGain">&mdash;</span><span class="lbl">Elevation Gain</span></div>
+  </div>
+  <div class="cue-row">
+    <div class="scroll-cue" id="scrollCue"><span class="arrow">&darr;</span> <span id="scrollCueText">SCROLL TO FOLLOW THE ROUTE</span></div>
+    <div class="scroll-cue live-cue hidden" id="liveCueDesktop">&middot; <span id="liveCueText">JUMP TO OUR LOCATION</span></div>
+  </div>
+</div>
+
+<div id="story"></div>
+
+<div id="outro">
+  <div class="outro-grid">
+    <div class="outro-text">
+      <div class="eyebrow">RODEO LABS &middot; SEPTEMBER 3&ndash;7</div>
+      <h2>Colorado, corner to corner.</h2>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam.</p>
+      <div class="outro-stats">
+        <div class="cell"><span class="num" id="outroMiles">&mdash;</span><span class="lbl">Miles</span></div>
+        <div class="cell"><span class="num" id="outroHighPoint">&mdash;</span><span class="lbl">High Point (San Juans)</span></div>
+        <div class="cell"><span class="num" id="outroGain">&mdash;</span><span class="lbl">Elevation Gain</span></div>
+      </div>
+      <div class="cta-row">
+        <a class="cta" href="https://rodeo-labs.com/" target="_blank" rel="noopener">Rodeo Labs</a>
+        <a class="cta secondary" href="https://ridewithgps.com/routes/50533349" target="_blank" rel="noopener">View route on RideWithGPS</a>
+        <button class="cta secondary hidden" id="liveLocationBtnBottom">
+          <span class="dot-icon"></span> Jump to Current Location
+        </button>
+      </div>
+      <a class="credit-btn" href="https://orionadventurecartography.netlify.app" target="_blank" rel="noopener">Cartography by Orion Adventure Maps</a>
+    </div>
+    <div class="outro-map">
+      <svg id="overviewSvg" viewBox="0 0 460 300" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   The Colorado Diagonal
+   Five-leg scrollytelling route map, styled to match the Saddle
+   to Paddle traverse map: chapter cards drive the camera and a
+   "done vs. future" line reveal on the fixed background map,
+   with an elevation-profile bar and live-position tracking tied
+   to whichever leg is active.
+   Leg geometry pulled from CD.shp (RideWithGPS route #50533349,
+   split into 5 legs by the user), simplified with Douglas-Peucker
+   for file size; mileage figures are computed from the original
+   full-resolution GPX track, not the simplified display geometry.
+   ============================================================ */
+
+function haversineMi(a, b) {
+  const R = 3958.8;
+  const lat1 = (a[1] * Math.PI) / 180, lat2 = (b[1] * Math.PI) / 180;
+  const dLat = ((b[1] - a[1]) * Math.PI) / 180;
+  const dLon = ((b[0] - a[0]) * Math.PI) / 180;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+function bboxOfCoords(coords) {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const c of coords) {
+    if (c[0] < minX) minX = c[0];
+    if (c[0] > maxX) maxX = c[0];
+    if (c[1] < minY) minY = c[1];
+    if (c[1] > maxY) maxY = c[1];
+  }
+  return [[minX, minY], [maxX, maxY]];
+}
+function emptyFC() { return { type: 'FeatureCollection', features: [] }; }
+function lineFeature(coords, props) {
+  return { type: 'Feature', properties: props, geometry: { type: 'LineString', coordinates: coords } };
+}
+function pointFeature(coord, props) {
+  return { type: 'Feature', properties: props, geometry: { type: 'Point', coordinates: coord } };
+}
+
+/* ---------- Route geometry, by leg ----------
+   Split into 13 legs at the exact mile breakpoints from Steve's writeup
+   (Colorado_dia.gpx). Coordinates below are Douglas-Peucker-simplified
+   per leg for file size; TOTAL_MILES and per-leg mileage use Steve's
+   stated breakpoint deltas directly (they match his own prose numbers,
+   e.g. "a hundred and twenty-nine miles" = leg 2's 129.2mi) rather than
+   a GPS recalculation, so the map matches the writeup exactly. */
+const LEG0 = [[-102.05172,41.00236],[-102.07093,41.00277],[-102.07093,41.04551],[-102.07189,41.05194],[-102.07432,41.0582],[-102.07461,41.06228],[-102.08149,41.06218],[-102.08146,41.05979],[-102.10191,41.05206],[-102.13079,41.04966],[-102.16064,41.04218],[-102.23212,41.00215],[-102.25788,40.98896],[-102.2587,40.98982],[-102.27155,40.98274],[-102.27378,40.98272]];
+const LEG1 = [[-102.27378,40.98272],[-102.31259,40.98177],[-102.32639,40.96728],[-102.3323,40.96198],[-102.33511,40.96077],[-102.41515,40.96016],[-102.57916,40.91975],[-102.72524,40.87932],[-102.79209,40.85961],[-102.7992,40.85784],[-102.80569,40.85759],[-102.81449,40.85326],[-102.87211,40.8357],[-102.88073,40.83134],[-102.94663,40.80678],[-102.94599,40.80598],[-102.94017,40.80813],[-102.946,40.80597],[-102.94604,40.79802],[-102.94761,40.7961],[-102.94522,40.79059],[-102.95164,40.78669],[-102.97733,40.77634],[-102.99159,40.77194],[-102.99183,40.76457],[-103.00683,40.76081],[-103.00877,40.7561],[-103.01706,40.7521],[-103.03478,40.74719],[-103.04299,40.74694],[-103.0499,40.74196],[-103.05915,40.74172],[-103.07061,40.73456],[-103.07078,40.72828],[-103.08479,40.72807],[-103.08504,40.70975],[-103.11338,40.70968],[-103.11323,40.70249],[-103.11713,40.70184],[-103.11697,40.69238],[-103.12394,40.6921],[-103.12664,40.69028],[-103.12666,40.68274],[-103.13323,40.66816],[-103.14765,40.65358],[-103.14888,40.65065],[-103.15593,40.64881],[-103.17623,40.63161],[-103.18212,40.61801],[-103.18222,40.61164],[-103.18371,40.6088],[-103.2017,40.58549],[-103.20489,40.5801],[-103.20645,40.5746],[-103.20996,40.56945],[-103.2196,40.56179],[-103.2196,40.55593],[-103.2243,40.55577],[-103.22879,40.55173],[-103.22887,40.54478],[-103.23778,40.54465],[-103.23759,40.5374],[-103.26132,40.53733],[-103.26611,40.53441],[-103.26973,40.54435],[-103.32367,40.54416],[-103.32676,40.54397],[-103.3347,40.53676],[-103.35199,40.53685],[-103.35883,40.53102],[-103.3645,40.52122],[-103.36844,40.51906],[-103.36875,40.51568],[-103.37354,40.50772],[-103.37207,40.50238],[-103.383,40.49627],[-103.38274,40.49264],[-103.38106,40.48947],[-103.3823,40.4886],[-103.38531,40.48909],[-103.38454,40.48591],[-103.38758,40.48449],[-103.3868,40.48326],[-103.38954,40.47946],[-103.39553,40.47571],[-103.39652,40.47029],[-103.39817,40.46951],[-103.40158,40.47124],[-103.40434,40.46953],[-103.40389,40.46467],[-103.41206,40.46456],[-103.41147,40.45694],[-103.413,40.44832],[-103.41661,40.44585],[-103.42182,40.43896],[-103.41973,40.44134],[-103.42581,40.43558],[-103.4556,40.41564],[-103.47795,40.40324],[-103.50758,40.3703],[-103.52993,40.36016],[-103.52623,40.35242],[-103.52728,40.34734],[-103.52725,40.33507],[-103.53258,40.33502],[-103.53658,40.33659],[-103.54606,40.33492],[-103.5465,40.32337],[-103.54482,40.32219],[-103.54495,40.32056],[-103.58396,40.3201],[-103.584,40.30566],[-103.59345,40.30561],[-103.59404,40.29285],[-103.59694,40.29118],[-103.60299,40.29107],[-103.60337,40.26216],[-103.60831,40.26213],[-103.60802,40.25879],[-103.60948,40.25721],[-103.61559,40.25584],[-103.64136,40.25616],[-103.6423,40.24785],[-103.69726,40.24665],[-103.77325,40.2468],[-103.77316,40.24911],[-103.81085,40.24852],[-103.81083,40.24701],[-103.81472,40.24683],[-103.84883,40.24677],[-103.84904,40.2323],[-104.05539,40.23296],[-104.05587,40.22612]];
+const LEG2 = [[-104.05587,40.22612],[-104.0569,40.0738],[-104.4143,40.07335],[-104.41443,39.75998],[-104.41526,39.75814],[-104.41764,39.75701],[-104.43306,39.75703]];
+const LEG3 = [[-104.43306,39.75703],[-104.44223,39.75714],[-104.44264,39.756],[-104.53348,39.75507],[-104.60311,39.74429],[-104.60348,39.68174],[-104.72963,39.68202],[-104.7427,39.67881],[-104.754,39.68185],[-104.76416,39.68206],[-104.77074,39.67744],[-104.77384,39.67716],[-104.77982,39.6741],[-104.78719,39.67328],[-104.78626,39.67199],[-104.78811,39.67155],[-104.7888,39.66753],[-104.80577,39.66755],[-104.8093,39.66588],[-104.81158,39.66636],[-104.82287,39.65821],[-104.83057,39.65437],[-104.83145,39.6517],[-104.83426,39.65465],[-104.84165,39.65781],[-104.8553,39.65308],[-104.85754,39.65346],[-104.85847,39.65654],[-104.86183,39.65679],[-104.86483,39.66002],[-104.86809,39.65999],[-104.87196,39.66293],[-104.87946,39.66362],[-104.89001,39.67018],[-104.88969,39.67103],[-104.89325,39.66764],[-104.9208,39.66759],[-104.91919,39.66491],[-104.92242,39.66376],[-104.92334,39.65932],[-104.92841,39.66042],[-104.93533,39.65848],[-104.9403,39.65958],[-104.94087,39.66077],[-104.95238,39.65982],[-105.00282,39.65992],[-105.00602,39.65566],[-105.00767,39.651],[-105.01308,39.649],[-105.01417,39.64728],[-105.01502,39.63882],[-105.01764,39.63489],[-105.01503,39.63299],[-105.01406,39.63075],[-105.01535,39.62812],[-105.01859,39.62568],[-105.01665,39.62237],[-105.01757,39.6198],[-105.02052,39.61568],[-105.02487,39.61304],[-105.02305,39.60899],[-105.02415,39.59952],[-105.02514,39.59734],[-105.02854,39.59506],[-105.02647,39.59126],[-105.03047,39.58762],[-105.03056,39.5859],[-105.02889,39.58423],[-105.0305,39.58215],[-105.03215,39.58196],[-105.03632,39.57785],[-105.0405,39.57585],[-105.04156,39.57199],[-105.04016,39.56794],[-105.04084,39.56645],[-105.0434,39.56614],[-105.04314,39.56527],[-105.04688,39.56539],[-105.0494,39.56247],[-105.05835,39.5599],[-105.06855,39.56125],[-105.07595,39.55577],[-105.0827,39.54775],[-105.08653,39.54653],[-105.08938,39.5404],[-105.09155,39.54038],[-105.09542,39.53003],[-105.0886,39.51489],[-105.09222,39.50379],[-105.09254,39.49539],[-105.09817,39.48762],[-105.10437,39.48587]];
+const LEG4 = [[-105.10437,39.48587],[-105.11111,39.48377],[-105.11311,39.48414],[-105.11485,39.48608],[-105.11741,39.48569],[-105.11844,39.48308],[-105.11679,39.4814],[-105.1192,39.48053],[-105.12172,39.48167],[-105.12827,39.4777],[-105.13074,39.47356],[-105.13533,39.47076],[-105.13293,39.46753],[-105.13271,39.46119],[-105.12516,39.45695],[-105.12362,39.4549],[-105.12252,39.44807],[-105.12582,39.43939],[-105.12457,39.43625],[-105.12079,39.43382],[-105.1189,39.43102],[-105.1195,39.42636],[-105.1181,39.42565],[-105.11937,39.42579],[-105.11719,39.42513],[-105.11865,39.42439],[-105.11676,39.42445],[-105.12095,39.42405],[-105.11958,39.4217],[-105.12267,39.42039],[-105.12227,39.4216],[-105.12522,39.4194],[-105.1253,39.4179],[-105.12451,39.418],[-105.12617,39.41639],[-105.12526,39.41595],[-105.12613,39.41519],[-105.12558,39.41347],[-105.12658,39.41181],[-105.13057,39.41038],[-105.12991,39.40767],[-105.13263,39.40939],[-105.13319,39.40866],[-105.13422,39.41122],[-105.14063,39.41276],[-105.14102,39.40912],[-105.14474,39.41077],[-105.14701,39.41038],[-105.14759,39.40806],[-105.14945,39.40804],[-105.15,39.40642],[-105.15295,39.40673],[-105.15117,39.40376],[-105.1519,39.4029],[-105.15067,39.40221],[-105.15099,39.40015],[-105.15943,39.40586],[-105.15843,39.40585],[-105.15939,39.40688],[-105.15788,39.40619],[-105.15997,39.40915],[-105.16231,39.40617],[-105.16356,39.40657],[-105.16221,39.40518],[-105.16295,39.40406],[-105.16446,39.40461],[-105.1638,39.40305],[-105.16455,39.40249],[-105.16365,39.40237],[-105.1662,39.40235],[-105.16735,39.40123],[-105.16696,39.39644]];
+const LEG5 = [[-105.16696,39.39644],[-105.16705,39.39461],[-105.16528,39.39415],[-105.16373,39.39133],[-105.16982,39.38878],[-105.17289,39.38531],[-105.173,39.38353],[-105.16928,39.38067],[-105.17202,39.37736],[-105.16718,39.37372],[-105.16681,39.37146],[-105.16888,39.369],[-105.16627,39.36305],[-105.16728,39.35931],[-105.17118,39.35645],[-105.17173,39.35299],[-105.17645,39.34907],[-105.17627,39.34689],[-105.17711,39.34428],[-105.17903,39.34292],[-105.17837,39.34088],[-105.17924,39.33943],[-105.18196,39.33834],[-105.18381,39.33523],[-105.18731,39.33415],[-105.1815,39.33043],[-105.18267,39.32906],[-105.18759,39.32776],[-105.1851,39.32587],[-105.1855,39.32369],[-105.18755,39.32098],[-105.18864,39.31693],[-105.19216,39.31287],[-105.196,39.3114],[-105.19855,39.30886],[-105.19897,39.30643],[-105.1976,39.30312],[-105.20108,39.30176],[-105.202,39.29967],[-105.20546,39.29999],[-105.20805,39.2983],[-105.2079,39.29383],[-105.20656,39.29168],[-105.20948,39.28721],[-105.20959,39.28131],[-105.21915,39.26834],[-105.21775,39.2662],[-105.21971,39.2614],[-105.22567,39.26041],[-105.22372,39.25823],[-105.22417,39.25611],[-105.22696,39.25589],[-105.22714,39.25411],[-105.23149,39.25415],[-105.23511,39.25581],[-105.23601,39.25341],[-105.24075,39.25197],[-105.24133,39.24627],[-105.24259,39.24461],[-105.24579,39.2441],[-105.24642,39.2426],[-105.25172,39.24433],[-105.25384,39.24374],[-105.25552,39.24161],[-105.26108,39.24187],[-105.26494,39.24046],[-105.27068,39.24268],[-105.28055,39.24064],[-105.28379,39.23742],[-105.28143,39.23086],[-105.28632,39.22841],[-105.28849,39.22581],[-105.30076,39.22648],[-105.30602,39.22563],[-105.31252,39.22278],[-105.32637,39.22123],[-105.3345,39.22248],[-105.33872,39.22162],[-105.34094,39.21556],[-105.34327,39.21347],[-105.34095,39.2094],[-105.34264,39.20816],[-105.34511,39.2082],[-105.3445,39.20705],[-105.34644,39.203],[-105.34379,39.19831],[-105.34654,39.19432],[-105.34399,39.1923],[-105.34545,39.19069],[-105.34391,39.19052],[-105.34401,39.18965],[-105.35001,39.18755],[-105.34782,39.18665],[-105.35112,39.18514],[-105.35385,39.18707],[-105.36127,39.18313],[-105.36194,39.17997],[-105.36052,39.1781],[-105.36153,39.17305],[-105.35947,39.17464],[-105.3604,39.17232],[-105.35925,39.17242],[-105.36045,39.17175],[-105.35917,39.17004],[-105.36024,39.16929],[-105.35725,39.16881],[-105.35505,39.16679],[-105.35866,39.16715],[-105.3614,39.16523],[-105.36106,39.16403],[-105.3623,39.16312],[-105.36642,39.16034],[-105.36842,39.16107],[-105.36985,39.15942],[-105.36836,39.15691],[-105.36925,39.15576],[-105.36692,39.15564],[-105.36806,39.15372],[-105.36623,39.15402],[-105.36703,39.15147],[-105.36572,39.14702],[-105.36737,39.14142],[-105.36623,39.13927],[-105.3679,39.13639],[-105.36729,39.13153],[-105.3654,39.13217],[-105.3675,39.13051],[-105.36714,39.1256],[-105.36816,39.12355],[-105.36589,39.12213],[-105.36888,39.11966],[-105.36479,39.11801],[-105.36461,39.11578],[-105.36744,39.11419],[-105.36603,39.11388],[-105.36433,39.10691],[-105.36039,39.10459],[-105.36166,39.10288],[-105.36585,39.10397],[-105.36639,39.09766],[-105.36482,39.09669],[-105.36509,39.0956],[-105.37089,39.09539],[-105.37245,39.09616],[-105.37347,39.09862],[-105.37758,39.09588],[-105.38391,39.09548],[-105.38315,39.09188],[-105.38447,39.09286],[-105.38618,39.09221],[-105.38745,39.09362],[-105.39028,39.09307],[-105.39284,39.09863],[-105.39199,39.10251],[-105.39444,39.10417],[-105.39759,39.09694],[-105.4015,39.09405],[-105.40624,39.08698],[-105.41082,39.08267],[-105.41491,39.08215],[-105.41611,39.07988],[-105.42402,39.08659],[-105.42586,39.09288],[-105.43018,39.09004],[-105.44014,39.09203],[-105.44586,39.09105],[-105.45138,39.09308],[-105.4563,39.09274]];
+const LEG6 = [[-105.4563,39.09274],[-105.45699,39.09359],[-105.47425,39.09071],[-105.50429,39.08952],[-105.50779,39.09189],[-105.51069,39.09207],[-105.51308,39.09121],[-105.51371,39.08811],[-105.51925,39.08684],[-105.52204,39.08801],[-105.52594,39.08615],[-105.5362,39.08892],[-105.54111,39.08892],[-105.54726,39.09209],[-105.54706,39.08239],[-105.55172,39.07949],[-105.55396,39.07588],[-105.5578,39.0744],[-105.55882,39.07168],[-105.56126,39.07011],[-105.56834,39.06969],[-105.57145,39.07231],[-105.5755,39.07122],[-105.5777,39.06957],[-105.57811,39.06778],[-105.58564,39.06778],[-105.59038,39.06973],[-105.60423,39.0697],[-105.60408,39.03846],[-105.60498,39.02824],[-105.63283,39.02217],[-105.6447,39.01539],[-105.66708,39.01236],[-105.68293,39.00843],[-105.69057,39.00987],[-105.71734,39.00829],[-105.72094,39.00904],[-105.72952,39.0154],[-105.75112,39.0206],[-105.75453,39.01977],[-105.75636,39.0177],[-105.76187,39.01697],[-105.79351,39.02123],[-105.77062,38.99872],[-105.77529,38.99708],[-105.77468,38.98311],[-105.7792,38.97683],[-105.78179,38.9649],[-105.78567,38.95708],[-105.79549,38.95147],[-105.79728,38.94741],[-105.79911,38.9462],[-105.79937,38.94426],[-105.79676,38.94047],[-105.79708,38.93358],[-105.82488,38.93332],[-105.82385,38.9272],[-105.82383,38.91169],[-105.8525,38.91152],[-105.85232,38.87891],[-105.85398,38.87503],[-105.85223,38.87405],[-105.8522,38.868],[-105.88122,38.86786],[-105.88951,38.86143],[-105.8898,38.85356],[-105.90752,38.85308],[-105.90799,38.85776],[-105.91597,38.85917],[-105.92038,38.86139],[-105.92725,38.86035],[-105.93003,38.86462],[-105.93131,38.8625],[-105.93344,38.86274],[-105.94077,38.87008],[-105.94479,38.87027],[-105.94706,38.86836],[-105.94633,38.86744],[-105.94807,38.86533],[-105.95713,38.86181],[-105.9616,38.8587],[-105.96312,38.85623],[-105.97051,38.85178],[-105.98221,38.84936],[-105.98626,38.8458],[-105.98854,38.83981],[-106.00163,38.83801],[-106.01056,38.84143],[-106.0163,38.8382]];
+const LEG7 = [[-106.0163,38.8382],[-106.02282,38.83474],[-106.02761,38.83735],[-106.03376,38.83334],[-106.03828,38.83569],[-106.04195,38.83285],[-106.04654,38.83487],[-106.04919,38.8334],[-106.05419,38.83315],[-106.05998,38.83586],[-106.06226,38.83414],[-106.072,38.83102],[-106.07709,38.83286],[-106.086,38.82972],[-106.09108,38.82957],[-106.10077,38.83101],[-106.10184,38.83225],[-106.10162,38.83494],[-106.10671,38.83684],[-106.10744,38.84037],[-106.11765,38.84788],[-106.11794,38.84491],[-106.1219,38.84702],[-106.12303,38.84462],[-106.16763,38.83248],[-106.19605,38.81712],[-106.20867,38.81269],[-106.22002,38.81204],[-106.22793,38.81295],[-106.23275,38.81126],[-106.23588,38.80836],[-106.2418,38.80579],[-106.24639,38.80572],[-106.25756,38.80855],[-106.26343,38.81164],[-106.27189,38.8141],[-106.27612,38.81435],[-106.28155,38.81285],[-106.28481,38.81432],[-106.28967,38.81418],[-106.29917,38.81099],[-106.3032,38.81176],[-106.30936,38.81031],[-106.31826,38.81283],[-106.34038,38.81503],[-106.35507,38.80933],[-106.36523,38.80881],[-106.3692,38.80544],[-106.38177,38.80319],[-106.38048,38.80566],[-106.38417,38.80468],[-106.38339,38.80595],[-106.38894,38.80667],[-106.39074,38.80815],[-106.38767,38.80726],[-106.38882,38.80907],[-106.39433,38.81204],[-106.39769,38.81535],[-106.40078,38.81569],[-106.40235,38.81248],[-106.40205,38.81474],[-106.40574,38.81774],[-106.40669,38.81955],[-106.40597,38.82244],[-106.40882,38.82521],[-106.40686,38.82675],[-106.40339,38.82469],[-106.40587,38.82745],[-106.40938,38.82804],[-106.40879,38.83248],[-106.41042,38.83599],[-106.41345,38.83883],[-106.41391,38.84103],[-106.41452,38.83513],[-106.41623,38.83307],[-106.41886,38.83529],[-106.4181,38.83742],[-106.42017,38.84302],[-106.4249,38.84625],[-106.42227,38.84232],[-106.42515,38.84465],[-106.43671,38.84786],[-106.44223,38.84611],[-106.44825,38.84606],[-106.445,38.84523]];
+const LEG8 = [[-106.445,38.84523],[-106.44397,38.84456],[-106.45411,38.8439],[-106.4584,38.84589],[-106.46504,38.84443],[-106.4712,38.84664],[-106.47649,38.84391],[-106.47711,38.84127],[-106.47397,38.84059],[-106.47156,38.84201],[-106.47074,38.84074],[-106.47033,38.83645],[-106.47163,38.83317],[-106.47742,38.82631],[-106.47507,38.82541],[-106.47604,38.82247],[-106.47301,38.81594],[-106.47806,38.81249],[-106.48232,38.8075],[-106.48316,38.8047],[-106.48874,38.80407],[-106.49322,38.80001],[-106.48671,38.79147],[-106.48411,38.77948],[-106.48597,38.76946],[-106.48327,38.76105],[-106.48038,38.75714],[-106.48036,38.75155],[-106.48137,38.74927],[-106.48482,38.74843],[-106.48563,38.74483],[-106.48364,38.74014],[-106.48449,38.73771],[-106.48767,38.73395],[-106.49614,38.72985],[-106.49833,38.72746],[-106.49844,38.7168],[-106.49454,38.70377],[-106.49253,38.70936],[-106.49,38.6997],[-106.48962,38.70277],[-106.48853,38.70185],[-106.4887,38.70024],[-106.48504,38.69908],[-106.48179,38.69648],[-106.48612,38.69432],[-106.48468,38.68945],[-106.48406,38.6899],[-106.48503,38.68789],[-106.4902,38.68667],[-106.49599,38.68297],[-106.4981,38.68012],[-106.49493,38.68212],[-106.47827,38.68534],[-106.4847,38.68148],[-106.47354,38.68404],[-106.46895,38.68329],[-106.46743,38.68407],[-106.46493,38.68229],[-106.46288,38.67255],[-106.46687,38.66589],[-106.46689,38.66184],[-106.46821,38.66058],[-106.46957,38.65369],[-106.47019,38.64332],[-106.46932,38.6391],[-106.47023,38.6349],[-106.47329,38.62777],[-106.4766,38.62451],[-106.48175,38.61518],[-106.48588,38.61578],[-106.49026,38.61324],[-106.49722,38.61134],[-106.50908,38.61253],[-106.51283,38.61121],[-106.51369,38.6118],[-106.52227,38.6063],[-106.52104,38.60522],[-106.5237,38.60285],[-106.52392,38.60093],[-106.52756,38.59577],[-106.52693,38.59468],[-106.52302,38.59355],[-106.52472,38.59322],[-106.5245,38.59203],[-106.5267,38.59086],[-106.52611,38.58952],[-106.52714,38.58764],[-106.53279,38.58282],[-106.53115,38.58187],[-106.52611,38.58314],[-106.51657,38.58012],[-106.52313,38.57446],[-106.5099,38.57796],[-106.51079,38.57351],[-106.51356,38.57237],[-106.51611,38.56291],[-106.51785,38.56225],[-106.51271,38.56388],[-106.51137,38.5658],[-106.51189,38.56222],[-106.51469,38.55677],[-106.51442,38.54806],[-106.51658,38.54371],[-106.51553,38.54235],[-106.50832,38.53949],[-106.50515,38.53573],[-106.49891,38.52238],[-106.49897,38.51366],[-106.51343,38.51143],[-106.52696,38.51312],[-106.53326,38.51009],[-106.54514,38.51141],[-106.55519,38.51006],[-106.55891,38.50553],[-106.56525,38.50187],[-106.56652,38.49991],[-106.56623,38.49694],[-106.57014,38.49376],[-106.57622,38.49388],[-106.58071,38.49184],[-106.58441,38.49151],[-106.60475,38.47409],[-106.61804,38.45645],[-106.60986,38.45298]];
+const LEG9 = [[-106.60986,38.45298],[-106.6086,38.45251],[-106.60858,38.43904],[-106.61722,38.42864],[-106.62605,38.41045],[-106.62977,38.40962],[-106.6404,38.41041],[-106.64818,38.40778],[-106.65399,38.40877],[-106.66046,38.40746],[-106.66857,38.39522],[-106.6684,38.39117],[-106.67582,38.38176],[-106.67766,38.37452],[-106.68185,38.36985],[-106.68724,38.36729],[-106.69351,38.36655],[-106.69544,38.36704],[-106.69707,38.36953],[-106.70141,38.3692],[-106.70281,38.36535],[-106.71074,38.35757],[-106.71862,38.35578],[-106.73315,38.346],[-106.74283,38.34323],[-106.74522,38.34154],[-106.75693,38.31668],[-106.76079,38.31101],[-106.75943,38.30914],[-106.75413,38.30728],[-106.7544,38.29962],[-106.75193,38.29188],[-106.75287,38.2891],[-106.74007,38.28132],[-106.73597,38.27704],[-106.73875,38.27583],[-106.74282,38.27586],[-106.74575,38.27241],[-106.74588,38.25927],[-106.74889,38.25232],[-106.74982,38.24109],[-106.74758,38.23325],[-106.75467,38.23107],[-106.76023,38.23239],[-106.76172,38.22976],[-106.76128,38.22599],[-106.76418,38.2232],[-106.77484,38.21758],[-106.79571,38.2095],[-106.79709,38.20581],[-106.80168,38.20346],[-106.81198,38.20138],[-106.82411,38.19716],[-106.82813,38.19742],[-106.82971,38.20003],[-106.83605,38.20282],[-106.8408,38.19984],[-106.84749,38.19818],[-106.85504,38.18949],[-106.85539,38.18609],[-106.85429,38.18229],[-106.85524,38.17626],[-106.85338,38.16894],[-106.86121,38.16416],[-106.86347,38.15827],[-106.86686,38.15692],[-106.87047,38.15343],[-106.87412,38.15362],[-106.87977,38.14777],[-106.88126,38.14868],[-106.88517,38.14738],[-106.89845,38.13656],[-106.89871,38.13182],[-106.90198,38.13098],[-106.90482,38.12809],[-106.90666,38.12814],[-106.90971,38.13216],[-106.91389,38.13092],[-106.92138,38.12352],[-106.92256,38.11554],[-106.93209,38.11334],[-106.93554,38.10805],[-106.93795,38.1071],[-106.94748,38.10733],[-106.95473,38.10333],[-106.95962,38.10687],[-106.97023,38.10496],[-106.98488,38.0983],[-106.9898,38.09844],[-106.99114,38.10071],[-106.99722,38.10147],[-106.99843,38.10259],[-106.99827,38.10053],[-106.99275,38.09582],[-107.00053,38.0937],[-107.00651,38.08805],[-107.01117,38.09064],[-107.01268,38.09018],[-107.01468,38.08666],[-107.01105,38.08193],[-107.01109,38.07986],[-107.01421,38.08234],[-107.02304,38.08527],[-107.02969,38.09344],[-107.03434,38.09579],[-107.03731,38.09256],[-107.03876,38.08593],[-107.03827,38.08013],[-107.03945,38.07799],[-107.04618,38.07747],[-107.05018,38.07564],[-107.05385,38.07049],[-107.06162,38.06835],[-107.07678,38.05276],[-107.07823,38.05355],[-107.08236,38.05202],[-107.09645,38.05055],[-107.09947,38.04955],[-107.10068,38.04733],[-107.10812,38.048],[-107.12387,38.04683],[-107.13277,38.0414],[-107.13569,38.04118]];
+const LEG10 = [[-107.13569,38.04118],[-107.13974,38.03994],[-107.14644,38.03464],[-107.14931,38.02866],[-107.15292,38.02789],[-107.1574,38.02958],[-107.16518,38.02887],[-107.17451,38.02294],[-107.17892,38.02286],[-107.18223,38.01731],[-107.18645,38.01468],[-107.19415,38.01216],[-107.19812,38.01246],[-107.20505,38.00815],[-107.20802,38.0078],[-107.21136,38.00191],[-107.22084,37.99546],[-107.22283,37.99109],[-107.2238,37.98604],[-107.22313,37.98469],[-107.22524,37.98363],[-107.22585,37.98591],[-107.23004,37.98558],[-107.23405,37.9871],[-107.23642,37.98593],[-107.24247,37.98571],[-107.24305,37.98671],[-107.24155,37.98792],[-107.24102,37.9913],[-107.24634,37.98988],[-107.24794,37.99081],[-107.24964,37.98972],[-107.25487,37.99003],[-107.25385,37.98802],[-107.25463,37.98703],[-107.26982,37.98483],[-107.27967,37.98073],[-107.27311,37.98597],[-107.28669,37.99098],[-107.28991,37.99886],[-107.29245,38.00129],[-107.29355,38.00107],[-107.29363,37.99825],[-107.29522,37.99742],[-107.29887,38.00046],[-107.30666,38.00352],[-107.31358,38.01342],[-107.31738,38.02541],[-107.31663,38.02735],[-107.31889,38.02808],[-107.32252,38.0239],[-107.33185,38.02017],[-107.33738,38.01956],[-107.33905,38.01801],[-107.34121,38.01935],[-107.34507,38.01837],[-107.3478,38.01933],[-107.35382,38.01882],[-107.36578,38.02108],[-107.36947,38.01949],[-107.3745,38.01907],[-107.37975,38.02189],[-107.38847,38.02082],[-107.39351,38.02176],[-107.39982,38.0199],[-107.40482,38.02171],[-107.41106,38.02141],[-107.42268,38.01873],[-107.42498,38.01693],[-107.43065,38.01566],[-107.43281,38.01378],[-107.4474,38.00893],[-107.46646,38.00739],[-107.46655,38.00634],[-107.46945,38.0053],[-107.47293,38.00067],[-107.47612,37.99862],[-107.47737,37.99529],[-107.48007,37.99426],[-107.48262,37.99067],[-107.4853,37.98352],[-107.49615,37.98079],[-107.50347,37.97511],[-107.51077,37.97296],[-107.51743,37.97267],[-107.52368,37.97448],[-107.5264,37.97389],[-107.53193,37.97633],[-107.54297,37.97742],[-107.54785,37.976],[-107.55088,37.97633],[-107.55658,37.98153],[-107.55933,37.98177],[-107.56002,37.98289],[-107.56122,37.98113],[-107.56421,37.98138],[-107.56309,37.98232],[-107.56644,37.98179],[-107.57437,37.97825],[-107.57403,37.97933],[-107.58046,37.97775],[-107.58741,37.97298],[-107.59021,37.96968],[-107.58922,37.96811],[-107.58459,37.96599],[-107.57995,37.96618],[-107.57472,37.96355],[-107.5784,37.96344],[-107.57579,37.96212],[-107.57499,37.96047],[-107.57595,37.96051],[-107.5758,37.95868],[-107.57406,37.95156],[-107.57615,37.94864],[-107.57317,37.94938],[-107.57415,37.94594],[-107.57348,37.9397],[-107.56725,37.93137],[-107.56352,37.92839],[-107.56296,37.92516],[-107.55823,37.91886],[-107.55803,37.91638],[-107.55548,37.9121],[-107.5571,37.90347],[-107.55944,37.8998],[-107.56038,37.89531],[-107.55911,37.89047],[-107.56325,37.88721],[-107.56591,37.8815],[-107.56424,37.87619],[-107.5652,37.87112],[-107.56909,37.8619],[-107.57408,37.85329],[-107.584,37.8445],[-107.58845,37.84234],[-107.59117,37.83835],[-107.59522,37.83556],[-107.59899,37.83513],[-107.60161,37.83301],[-107.61324,37.82868],[-107.62809,37.828],[-107.64117,37.82242],[-107.64516,37.8187],[-107.65569,37.81736],[-107.66072,37.81561],[-107.67049,37.80559]];
+const LEG11 = [[-107.67049,37.80559],[-107.68678,37.81101],[-107.69058,37.81132],[-107.69777,37.81653],[-107.70462,37.81967],[-107.71907,37.82254],[-107.72407,37.83125],[-107.72578,37.84121],[-107.72475,37.84756],[-107.72663,37.8513],[-107.73123,37.84621],[-107.74383,37.84754],[-107.74862,37.84605],[-107.7598,37.84708],[-107.76559,37.84571],[-107.76841,37.84658],[-107.77015,37.84885],[-107.76843,37.84873],[-107.77202,37.85127],[-107.77373,37.85037],[-107.77599,37.85159],[-107.78374,37.85029],[-107.78734,37.85132],[-107.78583,37.85169],[-107.78581,37.85362],[-107.7876,37.85638],[-107.79577,37.85968],[-107.81066,37.85882],[-107.81487,37.85698],[-107.82262,37.8576],[-107.82691,37.85563],[-107.84208,37.85883],[-107.84664,37.85802],[-107.86791,37.85907],[-107.87029,37.86202],[-107.86979,37.86085],[-107.8711,37.85959],[-107.87994,37.86068],[-107.8853,37.85513],[-107.88262,37.85087],[-107.88262,37.84478],[-107.88619,37.84014],[-107.88799,37.83247],[-107.89386,37.82769],[-107.89579,37.82279],[-107.90074,37.8154],[-107.91263,37.80865],[-107.92362,37.80592],[-107.9275,37.79969],[-107.93246,37.7967],[-107.93667,37.79603],[-107.94176,37.79226],[-107.94435,37.78783],[-107.94344,37.78464],[-107.94436,37.7807],[-107.95628,37.77971],[-107.97391,37.77238],[-107.98178,37.77305],[-107.98817,37.77139],[-107.99909,37.76453],[-107.9999,37.76475],[-107.99581,37.76835],[-108.00061,37.76621],[-108.00942,37.7753],[-108.01103,37.77787],[-108.01014,37.78219],[-108.01181,37.78371],[-108.01221,37.78731],[-108.01818,37.79054],[-108.03259,37.79525],[-108.04247,37.79732],[-108.04722,37.79685],[-108.04994,37.79823],[-108.05042,37.79981],[-108.05606,37.79926],[-108.06017,37.80184],[-108.0609,37.80021],[-108.06277,37.80404],[-108.06478,37.80029],[-108.064,37.79836],[-108.06497,37.79503],[-108.06602,37.79576],[-108.06647,37.78922],[-108.06972,37.78564],[-108.08161,37.78461],[-108.08547,37.78149],[-108.08911,37.78017],[-108.09036,37.78165],[-108.09152,37.78052],[-108.09312,37.78275],[-108.09473,37.78237],[-108.09418,37.78349],[-108.09579,37.784],[-108.09555,37.78572],[-108.09722,37.78888],[-108.11233,37.79565],[-108.1136,37.79807],[-108.119,37.80236],[-108.1219,37.80919],[-108.12394,37.81039],[-108.12498,37.81372],[-108.1233,37.81495],[-108.1253,37.81724],[-108.11978,37.82406],[-108.12803,37.82212],[-108.1308,37.82249],[-108.13309,37.82428],[-108.13513,37.82171],[-108.14864,37.82062],[-108.15512,37.8221],[-108.15831,37.82474],[-108.15878,37.82958],[-108.16368,37.82589],[-108.16841,37.82523],[-108.17259,37.82297],[-108.16637,37.81882],[-108.16755,37.81731],[-108.17372,37.81505],[-108.17402,37.81385],[-108.17083,37.81075],[-108.17381,37.81259],[-108.17162,37.80873],[-108.17494,37.81079],[-108.18115,37.8124],[-108.18106,37.81526],[-108.18484,37.8156],[-108.18728,37.81764],[-108.1935,37.8176],[-108.19814,37.81579],[-108.20081,37.81704],[-108.2079,37.81555],[-108.21157,37.81224],[-108.22431,37.8061],[-108.22602,37.8029],[-108.22494,37.80027],[-108.22749,37.80004],[-108.22988,37.79806],[-108.23094,37.79675],[-108.22908,37.79599],[-108.23078,37.79475],[-108.23893,37.79516],[-108.24203,37.79414],[-108.24364,37.79184],[-108.24811,37.79416],[-108.25525,37.79398],[-108.26637,37.79716],[-108.27507,37.79669],[-108.27902,37.79431],[-108.28913,37.79424],[-108.29045,37.79117],[-108.30212,37.78339],[-108.30227,37.77986],[-108.30844,37.77986],[-108.31444,37.77531],[-108.31608,37.77544],[-108.31853,37.77801],[-108.3213,37.77837],[-108.32539,37.77708],[-108.33318,37.77173],[-108.33629,37.77188],[-108.34155,37.7652],[-108.3503,37.76517],[-108.35174,37.76359],[-108.36098,37.76128],[-108.36307,37.76294],[-108.3618,37.75352],[-108.36303,37.7485],[-108.37667,37.74209],[-108.38109,37.73731],[-108.39449,37.73136],[-108.39768,37.72397],[-108.4009,37.72017],[-108.39956,37.7141],[-108.39793,37.71226],[-108.39121,37.71218],[-108.39051,37.7074],[-108.38773,37.70466],[-108.3865,37.69998],[-108.38697,37.69478],[-108.39358,37.68766],[-108.3965,37.67047],[-108.40001,37.66538],[-108.40053,37.66287],[-108.40009,37.65995],[-108.39683,37.65481],[-108.39669,37.65126],[-108.3987,37.64776],[-108.39876,37.64247],[-108.40327,37.63326],[-108.40365,37.63019],[-108.39925,37.62393],[-108.39852,37.61946],[-108.40455,37.6157],[-108.40621,37.61319],[-108.41557,37.60771],[-108.41839,37.60257],[-108.42085,37.60061],[-108.44999,37.59344],[-108.45865,37.5875],[-108.46193,37.5819],[-108.46084,37.57621],[-108.4593,37.57455]];
+const LEG12 = [[-108.4593,37.57455],[-108.45527,37.5703],[-108.45762,37.56144],[-108.45588,37.55603],[-108.46019,37.5502],[-108.46771,37.52898],[-108.46745,37.5277],[-108.46449,37.52672],[-108.46792,37.52557],[-108.46885,37.52409],[-108.4647,37.51872],[-108.46442,37.51653],[-108.46771,37.51412],[-108.48283,37.50935],[-108.48291,37.49004],[-108.48796,37.48159],[-108.48807,37.47965],[-108.4956,37.47723],[-108.49534,37.47457],[-108.50979,37.4719],[-108.52002,37.46542],[-108.53426,37.4636],[-108.53621,37.46252],[-108.54044,37.46458],[-108.54117,37.46956],[-108.54569,37.47176],[-108.54679,37.47403],[-108.55434,37.47568],[-108.56039,37.47555],[-108.56462,37.47699],[-108.58221,37.46898],[-108.58744,37.46794],[-108.59236,37.46331],[-108.591,37.4116],[-108.59114,37.35856],[-108.58928,37.35597],[-108.58796,37.35601],[-108.58788,37.35022],[-108.59442,37.34697],[-108.60653,37.33002],[-108.60927,37.32055],[-108.61007,37.31168],[-108.6442,37.25446],[-108.68171,37.21167],[-108.70538,37.15125],[-108.71606,37.13971],[-108.71935,37.13116],[-108.72262,37.11676],[-108.73139,37.09741],[-108.73312,37.08936],[-108.80224,37.0609],[-108.82232,37.05668],[-108.85593,37.05463],[-108.87111,37.05524],[-108.88671,37.05319],[-108.97434,37.02612],[-108.99174,37.01804],[-109.00769,37.01424],[-109.01413,37.00967],[-109.02532,37.00914],[-109.03009,37.0062],[-109.03473,36.99799],[-109.04097,36.9933],[-109.04514,36.99891]];
+
+const ROUTE_DATA = {
+  type: 'FeatureCollection',
+  features: [
+    { type: 'Feature', properties: { order: 0, type: 'route', name: "The Corner", chapter: "corner", miles: 17.4 }, geometry: { type: 'LineString', coordinates: LEG0 } },
+    { type: 'Feature', properties: { order: 1, type: 'route', name: "The South Platte Corridor", chapter: "south_platte", miles: 129.2 }, geometry: { type: 'LineString', coordinates: LEG1 } },
+    { type: 'Feature', properties: { order: 2, type: 'route', name: "Leaving the River", chapter: "leaving_river", miles: 52.2 }, geometry: { type: 'LineString', coordinates: LEG2 } },
+    { type: 'Feature', properties: { order: 3, type: 'route', name: "The Urban Crossing", chapter: "urban_crossing", miles: 54.2 }, geometry: { type: 'LineString', coordinates: LEG3 } },
+    { type: 'Feature', properties: { order: 4, type: 'route', name: "The Hogback and Waterton", chapter: "hogback_waterton", miles: 15.3 }, geometry: { type: 'LineString', coordinates: LEG4 } },
+    { type: 'Feature', properties: { order: 5, type: 'route', name: "Burn Scar and Granite", chapter: "burn_scar", miles: 43.7 }, geometry: { type: 'LineString', coordinates: LEG5 } },
+    { type: 'Feature', properties: { order: 6, type: 'route', name: "South Park", chapter: "south_park", miles: 50.4 }, geometry: { type: 'LineString', coordinates: LEG6 } },
+    { type: 'Feature', properties: { order: 7, type: 'route', name: "The Divide", chapter: "the_divide", miles: 32.6 }, geometry: { type: 'LineString', coordinates: LEG7 } },
+    { type: 'Feature', properties: { order: 8, type: 'route', name: "Taylor Park and the Ghost Towns", chapter: "taylor_park", miles: 47.7 }, geometry: { type: 'LineString', coordinates: LEG8 } },
+    { type: 'Feature', properties: { order: 9, type: 'route', name: "La Garita and Cochetopa", chapter: "la_garita", miles: 54.3 }, geometry: { type: 'LineString', coordinates: LEG9 } },
+    { type: 'Feature', properties: { order: 10, type: 'route', name: "Slumgullion and the Alpine Loop", chapter: "slumgullion", miles: 51.9 }, geometry: { type: 'LineString', coordinates: LEG10 } },
+    { type: 'Feature', properties: { order: 11, type: 'route', name: "Ophir and the Descent West", chapter: "ophir", miles: 75.8 }, geometry: { type: 'LineString', coordinates: LEG11 } },
+    { type: 'Feature', properties: { order: 12, type: 'route', name: "The Great Sage Plain", chapter: "sage_plain", miles: 63.1 }, geometry: { type: 'LineString', coordinates: LEG12 } },
+  ],
+};
+
+/* Colorado state boundary (real, from US Census cartographic boundary
+   data via PublicaMundi/MappingAPI, simplified), for context linework
+   under the route on both the live map and the outro overview map. */
+const CO_OUTLINE = [[-107.9197,41.0039],[-102.0539,41.0039],[-102.043,36.9948],[-109.0425,37.0003],[-109.0425,38.1669],[-109.0589,38.2764],[-109.048,40.9984],[-107.9197,41.0039]];
+
+const CHAPTERS = [
+  {
+    key: "corner", type: 'route', order: 0,
+    number: 1, title: "The Corner", zone: "The Plains",
+    mileStart: 0, mileEnd: 17.4,
+    body: [
+      `We start at the corner of a rectangle, the intersection of Colorado, Nebraska, and four different counties. No mountain, no river, nothing to photograph, just a spot where somebody’s survey line ended a long time ago. There is a small rock marking the spot with an old fence around it. The odd thing is that the lowest ground of the whole trip is back in Big Springs, Nebraska, about 250 feet below us, so the first thing we do is climb up to our own start line at four in the morning, in the dark.`
+    ],
+    gain: 218,
+  },
+  {
+    key: "south_platte", type: 'route', order: 1,
+    number: 2, title: "The South Platte Corridor", zone: "plains",
+    mileStart: 17.4, mileEnd: 146.6,
+    body: [
+      `A hundred and twenty-nine miles of following the South Platte river, and the route takes us through the towns rather than around them — Julesburg, Ovid, Sedgwick, Crook, Iliff, Sterling, Atwood, Merino, Hillrose, Brush, Fort Morgan. Shortgrass prairie the whole way, blue grama and buffalograss, which is about the driest grassland the Great Plains manages. Everyone assumes this will be the dull part, but that’s part of the assignment. We’re here to experience it all. Colorado’s first certified Dark Sky Park is out here off to the northwest, but we aim to pass through during the day.`
+    ],
+    gain: 1635,
+  },
+  {
+    key: "leaving_river", type: 'route', order: 2,
+    number: 3, title: "Leaving the River", zone: "plains",
+    mileStart: 146.6, mileEnd: 198.8,
+    body: [
+      `Here we let go of the river and head onto dryland, which on paper is fifty-two miles and 950 feet of climbing, and in practice will be an afternoon of heat with no water we can count on and whatever the wind decides to do. This is where the mountains show up on the horizon and then spend hours declining to get any closer. Somewhere under us the High Plains give way to the Colorado Piedmont, though I doubt we will notice. Roads will be paved and dirt alike.`
+    ],
+    gain: 950,
+  },
+  {
+    key: "urban_crossing", type: 'route', order: 3,
+    number: 4, title: "The Urban Crossing", zone: "plains into foothills",
+    mileStart: 198.8, mileEnd: 253.0,
+    body: [
+      `The line runs straight through a city of three million people and manages to do most of it on bike paths, something like 27 car-free miles of Cherry Creek and then the South Platte. It is the only stretch with traffic lights, and for a while the riding actually gets easier. Even if we arrive at dark, it is also the brightest sky we will ride under, which is worth thinking about later on.`,
+      `Come find us if you are local, or anywhere on the map, really.`
+    ],
+    gain: 2130,
+  },
+  {
+    key: "hogback_waterton", type: 'route', order: 4,
+    number: 5, title: "The Hogback and Waterton", zone: "foothills",
+    mileStart: 253.0, mileEnd: 268.3,
+    body: [
+      `Fifteen miles, 4,125 feet of climbing. For scale, the 253 miles of plains behind us added up to around 6,200 feet, so we get most of that back in a short, intense push. The river cuts right through the Dakota Hogback here, a wall of tilted sandstone, and then the canyon walls go to gneiss and granite that have been sitting there 1.7 billion years. Denver Water says about seventy bighorn sheep live in the canyon. I would like to see one. We usually see a dozen or three. Bears and mountain lions also lurk here. I hope we don’t see them.`,
+      `We aim to make first camp on CT1 if we’re lucky.`
+    ],
+    gain: 4125,
+  },
+  {
+    key: "burn_scar", type: 'route', order: 5,
+    number: 6, title: "Burn Scar and Granite", zone: "foothills into montane",
+    mileStart: 268.3, mileEnd: 312.0,
+    body: [
+      `Forty-four miles through what the Hayman Fire left behind. That was June 2002, 137,760 acres, and something like 60,000 of them burned in a single day. These days forest fires boast much bigger numbers. Back then 60,000 was apocalyptic. Twenty-four years later it is granite domes and standing snags with a lot of young aspen coming in underneath. I know this area well from other rides. It is a strange and beautiful place to ride through, though punishing with its washboard and relentless rollers. Cheesman Dam sits down in the middle of it, finished in 1905, and the fire got to it on day two.`
+    ],
+    gain: 6159,
+  },
+  {
+    key: "south_park", type: 'route', order: 6,
+    number: 7, title: "South Park", zone: "montane",
+    mileStart: 312.0, mileEnd: 362.4,
+    body: [
+      `Fifty miles of altitude. We never drop below 8,485 feet. South Park is a big open basin, with a TV show named after it. It is roughly fifty miles by thirty-five, sitting around 8,500 with fourteen-thousand-foot peaks standing all the way around the edge of it. The South Platte starts up here somewhere, which is the same river we spent 129 miles alongside down on the plains, so without really planning it we have come around to where that whole thing begins. Funny that people fight over every drop of rain and snow that falls up here. I water my lawn with the same water and feel terrible about it. Lawns are awful.`
+    ],
+    gain: 3124,
+  },
+  {
+    key: "the_divide", type: 'route', order: 7,
+    number: 8, title: "The Divide", zone: "montane, subalpine, alpine",
+    mileStart: 362.4, mileEnd: 395.0,
+    body: [
+      `Twenty miles and 4,072 feet up to Cottonwood Pass at 12,136 feet, and this is the only time the whole route crosses the Continental Divide. Water on the east side of that ridge is headed for the Gulf of Mexico eventually, water on the west side is headed for the Gulf of California, and we get to sit up there for a minute in between. It is also the first ground we will be on with no trees on it: The alpine. I love the alpine so much. Hopefully it is kind to us up there.`
+    ],
+    gain: 4072,
+  },
+  {
+    key: "taylor_park", type: 'route', order: 8,
+    number: 9, title: "Taylor Park and the Ghost Towns", zone: "alpine into subalpine",
+    mileStart: 395.0, mileEnd: 442.7,
+    body: [
+      `Taylor Park is a basin up above 9,000 feet that you can only get into by going over a pass, which is most of why it still looks the way it does. Some of the best parts of Colorado are protected by inconvenience. Tincup, then Cumberland Pass at 12,033 feet, then down into Pitkin. Cumberland comes within about a hundred feet of Cottonwood, though both of its sides drain into the Gunnison all the same. After that, one of the longest descents of the trip.`
+    ],
+    gain: 4011,
+  },
+  {
+    key: "la_garita", type: 'route', order: 9,
+    number: 10, title: "La Garita and Cochetopa", zone: "montane and subalpine",
+    mileStart: 442.7, mileEnd: 497.0,
+    body: [
+      `The emptiest 54 miles out here. No towns, no cell service, nowhere to bail out, and the course markers say things like Water and Decent Water, which tells you roughly what to expect. We also ride across the floor of the La Garita caldera, which threw out more than a thousand cubic miles of ash around 28 million years ago. Third largest eruption anybody knows about, and far too big to register from a bike.`
+    ],
+    gain: 5276,
+  },
+  {
+    key: "slumgullion", type: 'route', order: 10,
+    number: 11, title: "Slumgullion and the Alpine Loop", zone: "subalpine and alpine, high point",
+    mileStart: 497.0, mileEnd: 548.9,
+    body: [
+      `The highest ground of the trip and the most climbing in any one chapter, 7,844 feet of it, topping out at 12,955 feet on the Engineer Pass road. On the way up we go over the Slumgullion Earthflow, a landslide that is still sliding, as much as twenty feet a year, and that plugged the Lake Fork eight or nine hundred years ago to make Lake San Cristobal. Hours above treeline with no shelter, and storms can start by nine. I hope we make it. The San Juans can be brutal, and I’m in awe of them always.`
+    ],
+    gain: 7844,
+  },
+  {
+    key: "ophir", type: 'route', order: 11,
+    number: 12, title: "Ophir and the Descent West", zone: "alpine down to montane",
+    mileStart: 548.9, mileEnd: 624.7,
+    body: [
+      `Silverton, then up and over Ophir Pass at 11,794 feet, east to west. The east side is a graded shelf road and perfectly civil, and then the west side turns into one lane cut across a scree field with nothing underneath it. This is the most exposed riding on the whole route, but not nearly the most exposed riding that I’ve done in the San Juans. I know this place well, and the Rodeo heart beats with adventures had here. After Ophir the alpine is done with us. I’ll be sad about it but also relieved. Next up is seventy-six miles of forest descent through the Dolores headwaters and the Groundhog country.`
+    ],
+    gain: 8925,
+  },
+  {
+    key: "sage_plain", type: 'route', order: 12,
+    number: 13, title: "The Great Sage Plain", zone: "the ladder in reverse, into semi-desert",
+    mileStart: 624.7, mileEnd: 687.8,
+    body: [
+      `Off the volcanic San Juans and onto the Colorado Plateau, which is completely different ground — sandstone, sagebrush, piñon and juniper, and a lot more sky. Sixty-three miles running the whole ecosystem ladder backwards, down into semi-desert country we have not touched once in the previous 625 miles. The Park Service puts the center of the darkest remaining skies in the contiguous United States about ten miles off this line, which should make for a good last night if that is when we arrive here. The Four Corners Monument does close at 7pm. I’d hate for the gate to be closed when we finish.`
+    ],
+    gain: 2642,
+  },
+];
+
+const TYPE_LABEL = { route: 'Leg' };
+
+// Fast lookup: chapter key -> feature.
+const featureByChapter = new Map();
+ROUTE_DATA.features.forEach(f => {
+  if (f.properties.chapter) featureByChapter.set(f.properties.chapter, f);
+});
+
+/* ---------- Build chapter DOM ----------
+   Mirrors Steve's own writeup formatting: "MILE start-end · zone" tag,
+   then "{number} · {title}" heading, then one or more body paragraphs. */
+const storyEl = document.getElementById('story');
+CHAPTERS.forEach((ch) => {
+  const feature = featureByChapter.get(ch.key);
+  const miles = feature ? feature.properties.miles : (ch.mileEnd - ch.mileStart);
+  const div = document.createElement('div');
+  div.className = 'chapter';
+  div.dataset.chapterKey = ch.key;
+  const paragraphs = ch.body.map(p => `<p>${p}</p>`).join('\n');
+  div.innerHTML = `
+    <div class="card">
+      <div class="legkind"><span class="dot"></span>MILE ${ch.mileStart.toFixed(1)}&ndash;${ch.mileEnd.toFixed(1)} &middot; ${ch.zone.toUpperCase()}</div>
+      <h2>${ch.title}</h2>
+      ${paragraphs}
+      <div class="miles-row">
+        <span class="seg-mi">THIS LEG: ${miles.toFixed(1)} MI</span>
+        <span class="cum-mi">ELEVATION GAIN<br><b>${ch.gain.toLocaleString()} FT</b></span>
+      </div>
+    </div>
+  `;
+  storyEl.appendChild(div);
+});
+
+
+/* ---------- Outro overview map ----------
+   Static SVG (not MapLibre) showing just the route line, in the theme
+   accent color, over the Colorado bounds -- no state border drawn. */
+function buildOverviewSvg() {
+  const svg = document.getElementById('overviewSvg');
+  if (!svg) return;
+  const vb = svg.viewBox.baseVal;
+  const W = vb.width, H = vb.height;
+  // Horizontal/vertical margin reserved for the Big Springs / Four Corners
+  // labels, which sit diagonally off the route's two endpoints -- both
+  // endpoints are near the frame's corners, so the line itself is scaled
+  // down slightly to leave the labels room instead of clipping.
+  const PAD_X = 106, PAD_Y = 26;
+
+  // Crop context: Colorado's own box plus a fixed buffer into the
+  // neighboring states, rather than fitting tightly to just the route --
+  // gives the state-line hints below some room to read as "just over the
+  // border" instead of being clipped at Colorado's own edge.
+  const BUFFER_DEG = 0.7;
+  let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
+  CO_OUTLINE.forEach(c => {
+    if (c[0] < minLon) minLon = c[0];
+    if (c[0] > maxLon) maxLon = c[0];
+    if (c[1] < minLat) minLat = c[1];
+    if (c[1] > maxLat) maxLat = c[1];
+  });
+  minLon -= BUFFER_DEG; maxLon += BUFFER_DEG;
+  minLat -= BUFFER_DEG; maxLat += BUFFER_DEG;
+
+  const meanLat = (minLat + maxLat) / 2;
+  const xCorr = Math.cos((meanLat * Math.PI) / 180);
+  const spanX = (maxLon - minLon) * xCorr;
+  const spanY = (maxLat - minLat);
+  const availW = W - PAD_X * 2, availH = H - PAD_Y * 2;
+  const scale = Math.min(availW / spanX, availH / spanY);
+  const drawW = spanX * scale, drawH = spanY * scale;
+  const offX = (W - drawW) / 2, offY = (H - drawH) / 2 + 15;
+
+  function project([lon, lat]) {
+    const x = offX + (lon - minLon) * xCorr * scale;
+    const y = offY + (maxLat - lat) * scale;
+    return [x.toFixed(1), y.toFixed(1)];
+  }
+  function pathFor(coords, extra, close) {
+    const pts = coords.map(project);
+    let d = `M ${pts.map(p => p.join(',')).join(' L ')}`;
+    if (close) d += ' Z';
+    return `<path d="${d}" ${extra}></path>`;
+  }
+
+  // Colorado and its six neighbors, from real US state boundary data
+  // (PublicaMundi/MappingAPI, derived from US Census cartographic
+  // boundaries), simplified for file size. Colorado's own outline here
+  // replaces the old idealized-rectangle CO_OUTLINE for this map, since
+  // the real border has a couple of small survey-line jogs the perfect
+  // rectangle didn't have.
+  const REAL_STATE_BORDERS = {
+    COLORADO: CO_OUTLINE,
+    WYOMING: [[-109.0808,45.0021],[-104.0585,44.9966],[-104.053,41.0039],[-111.0471,40.9984],[-111.0525,45.0021],[-109.0808,45.0021]],
+    NEBRASKA: [[-103.3246,43.003],[-98.4994,42.9975],[-98.4665,42.9482],[-97.9517,42.7675],[-97.8312,42.8661],[-97.6888,42.8442],[-97.2178,42.8442],[-96.692,42.6579],[-96.6263,42.5155],[-96.4455,42.4882],[-96.2648,42.039],[-96.1279,41.9733],[-96.0622,41.7981],[-96.1224,41.6776],[-96.095,41.5406],[-95.9198,41.453],[-95.9252,41.2011],[-95.8266,40.9765],[-95.8814,40.7191],[-95.7664,40.5877],[-95.5528,40.2645],[-95.3063,40.0016],[-102.0539,40.0016],[-102.0539,41.0039],[-104.053,41.0039],[-104.053,43.003],[-103.3246,43.003]],
+    KANSAS: [[-101.906,40.0016],[-95.3063,40.0016],[-95.2078,39.9085],[-94.8846,39.8318],[-95.1092,39.5416],[-94.9832,39.443],[-94.8244,39.2075],[-94.6108,39.1582],[-94.6162,37.0003],[-102.043,36.9948],[-102.0539,40.0016],[-101.906,40.0016]],
+    OKLAHOMA: [[-100.0877,37.0003],[-94.6162,37.0003],[-94.6162,36.5019],[-94.43,35.3955],[-94.4848,33.6374],[-94.8682,33.747],[-94.9668,33.862],[-95.2242,33.9606],[-95.2899,33.8729],[-95.5473,33.8784],[-95.6021,33.9332],[-95.8376,33.8346],[-95.9362,33.8894],[-96.1498,33.8401],[-96.347,33.6867],[-96.4236,33.7743],[-96.6318,33.8455],[-96.8508,33.8455],[-96.922,33.9606],[-97.174,33.736],[-97.2561,33.862],[-97.3711,33.8236],[-97.4588,33.9058],[-97.6943,33.9825],[-97.8695,33.851],[-97.9462,33.9879],[-98.0886,34.0044],[-98.1708,34.1139],[-98.3625,34.1577],[-98.4884,34.0646],[-98.5706,34.1468],[-98.7678,34.1358],[-98.9868,34.2235],[-99.1895,34.2125],[-99.2607,34.4042],[-99.5784,34.4151],[-99.6988,34.3823],[-99.9234,34.574],[-100.0001,34.563],[-100.0001,36.5019],[-103.0014,36.5019],[-103.0014,37.0003],[-100.0877,37.0003]],
+    NEW_MEXICO: [[-107.4213,37.0003],[-103.0014,37.0003],[-103.0014,36.5019],[-103.0398,36.5019],[-103.0672,31.9998],[-106.6162,31.9998],[-106.6436,31.9012],[-106.5286,31.7862],[-108.21,31.7862],[-108.21,31.3316],[-109.048,31.3316],[-109.0425,37.0003],[-107.4213,37.0003]],
+    UTAH: [[-112.1644,41.9952],[-111.0471,42.0007],[-111.0471,40.9984],[-109.048,40.9984],[-109.0589,38.2764],[-109.0425,38.1669],[-109.0425,37.0003],[-114.0484,37.0003],[-114.043,41.9952],[-112.1644,41.9952]],
+  };
+  const STATE_LABELS = {
+    COLORADO: 'COLORADO', WYOMING: 'WYOMING', NEBRASKA: 'NEBRASKA', KANSAS: 'KANSAS',
+    OKLAHOMA: 'OKLAHOMA', NEW_MEXICO: 'NEW MEXICO', UTAH: 'UTAH',
+  };
+  // Rough centroids (mean of vertices) for label placement -- most
+  // neighboring states' true centroids fall well outside this small
+  // crop, so placement is clamped to the visible frame below, which
+  // naturally pushes each label toward the correct edge/direction.
+  const STATE_CENTROIDS = {
+    COLORADO: [-106.887, 39.064], WYOMING: [-107.858, 43.401], NEBRASKA: [-97.839, 41.814],
+    KANSAS: [-96.868, 39.19], OKLAHOMA: [-97.54, 34.429], NEW_MEXICO: [-106.152, 33.845],
+    UTAH: [-110.949, 39.826],
+  };
+
+  // Fade centered on Colorado's own centroid: Colorado's own border reads
+  // clearest (closest to the fade center), and each neighboring state's
+  // border fades out the farther a given point on it sits from Colorado --
+  // rather than showing their full outlines.
+  const [cx, cy] = project(STATE_CENTROIDS.COLORADO).map(Number);
+
+  let fadedMarkup = '';
+  Object.values(REAL_STATE_BORDERS).forEach(poly => {
+    fadedMarkup += pathFor(poly, 'fill="none" stroke="#ffffff" stroke-width="0.85"', true);
+  });
+
+  let svgMarkup = `
+    <defs>
+      <radialGradient id="overviewFade" gradientUnits="userSpaceOnUse" cx="${cx}" cy="${cy}" r="${Math.max(W, H) * 0.62}">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.32"></stop>
+        <stop offset="38%" stop-color="#ffffff" stop-opacity="0.16"></stop>
+        <stop offset="100%" stop-color="#ffffff" stop-opacity="0"></stop>
+      </radialGradient>
+      <mask id="overviewFadeMask">
+        <rect x="0" y="0" width="${W}" height="${H}" fill="url(#overviewFade)"></rect>
+      </mask>
+    </defs>
+    <g mask="url(#overviewFadeMask)">${fadedMarkup}</g>
+  `;
+
+  // Very faint, all-caps state labels -- clamped inside the frame so
+  // distant neighbor centroids (mostly outside this small crop) land at
+  // a sensible edge instead of off-canvas.
+  Object.keys(REAL_STATE_BORDERS).forEach(key => {
+    const [x, y] = project(STATE_CENTROIDS[key]).map(Number);
+    const lx = Math.max(30, Math.min(W - 30, x));
+    const ly = Math.max(16, Math.min(H - 10, y));
+    svgMarkup += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9.5" letter-spacing="0.12em" fill="#ffffff" opacity="0.22">${STATE_LABELS[key]}</text>`;
+  });
+
+  ROUTE_DATA.features.forEach(f => {
+    svgMarkup += pathFor(f.geometry.coordinates, 'fill="none" stroke="#BE7C2B" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"');
+  });
+
+  const startCoord = ROUTE_DATA.features[0].geometry.coordinates[0];
+  const endFeature = ROUTE_DATA.features[ROUTE_DATA.features.length - 1];
+  const endCoords = endFeature.geometry.coordinates;
+  const endCoord = endCoords[endCoords.length - 1];
+  const DENVER_COORD = [-104.9903, 39.7392];
+
+  // Fixed diagonal placement: label sits off in the given direction from
+  // its dot -- clamped so text never runs past the frame edge.
+  function markerAndLabel(coord, text, dirX, dirY, anchor) {
+    const [x, y] = project(coord).map(Number);
+    const dist = 16 / Math.SQRT2;
+    let lx = x + dirX * dist, ly = y + dirY * dist;
+    lx = Math.max(6, Math.min(W - 6, lx));
+    ly = Math.max(10, Math.min(H - 6, ly));
+
+    let m = `<circle cx="${x}" cy="${y}" r="3.5" fill="#EAE1C7" stroke="#BE7C2B" stroke-width="1.6"></circle>`;
+    m += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${anchor}" font-family="'JetBrains Mono', monospace" font-size="13" font-weight="500" fill="#EAE1C7" style="text-shadow:0 1px 3px rgba(0,0,0,0.6)">${text}</text>`;
+    return m;
+  }
+
+  svgMarkup += markerAndLabel(startCoord, 'Big Springs', 1, -1, 'start');
+  svgMarkup += markerAndLabel(endCoord, 'Four Corners', -1, 1, 'end');
+  svgMarkup += markerAndLabel(DENVER_COORD, 'Denver', 1, 1, 'start');
+
+  svg.innerHTML = svgMarkup;
+}
+buildOverviewSvg();
+
+const profileBg = document.getElementById('profileBg');
+const profileFg = document.getElementById('profileFg');
+const progressClipRect = document.getElementById('progressClipRect');
+const traceLine = document.getElementById('traceLine');
+const traceStopEnd = document.getElementById('traceStopEnd');
+const traceGradientEl = document.getElementById('traceGradient');
+
+// Total real trip miles: one shared line for the whole journey, in the
+// order it's actually traveled.
+const TOTAL_MILES = Math.round(ROUTE_DATA.features.reduce((sum, f) => sum + f.properties.miles, 0));
+const HIGH_POINT_FT = 12955; // San Juans, Engineer Pass road (leg 11) -- confirmed against Steve's writeup
+// Sum of the 13 per-leg CHAPTERS.gain figures below: Steve's writeup gives
+// exact numbers for legs 3, 5, 8, 11 (950 / 4,125 / 4,072 / 7,844 ft); the
+// other 9 legs are GPS-noise-threshold estimates from the full-resolution
+// track. This total (51,111') replaces an earlier 44,362' placeholder that
+// predates this per-leg breakdown -- flag if you have a trusted whole-route
+// figure to reconcile against instead.
+const ELEV_GAIN_FT = CHAPTERS.reduce((sum, ch) => sum + ch.gain, 0);
+document.getElementById('statMiles').textContent = TOTAL_MILES.toLocaleString();
+document.getElementById('statGain').textContent = ELEV_GAIN_FT.toLocaleString() + "'";
+document.getElementById('outroMiles').textContent = TOTAL_MILES.toLocaleString();
+document.getElementById('outroHighPoint').textContent = HIGH_POINT_FT.toLocaleString() + "'";
+document.getElementById('outroGain').textContent = ELEV_GAIN_FT.toLocaleString() + "'";
+
+/* ---------- Elevation profile (bottom bar) ----------
+   Sampled every ~3mi from the full-resolution track (231 points),
+   elevation converted meters->feet. */
+const ELEVATION_PROFILE = [[0.0,3613],[3.05,3387],[6.04,3379],[9.02,3424],[12.02,3422],[15.03,3451],[18.04,3490],[21.02,3524],[24.04,3532],[27.03,3544],[30.04,3572],[33.01,3593],[36.06,3627],[39.06,3646],[42.04,3671],[45.01,3695],[48.03,3719],[51.02,3741],[54.03,3765],[57.02,3779],[60.0,3812],[63.04,3848],[66.06,3863],[69.03,3870],[72.05,3899],[75.06,3917],[78.0,3942],[81.01,3961],[84.0,3984],[87.16,4000],[90.0,4096],[93.0,4122],[96.01,4134],[99.0,4146],[102.02,4088],[105.01,4104],[108.04,4137],[111.02,4160],[114.04,4183],[117.04,4202],[120.03,4229],[123.0,4242],[126.02,4271],[129.03,4305],[132.02,4333],[135.04,4368],[138.03,4409],[141.01,4446],[144.04,4538],[147.02,4558],[150.02,4601],[153.01,4635],[156.02,4672],[159.05,4801],[162.02,4818],[165.02,4804],[168.05,4845],[171.03,4943],[174.03,4851],[177.05,4874],[180.05,4934],[183.05,5028],[186.03,5114],[189.03,5203],[192.0,5286],[195.02,5390],[198.0,5483],[201.04,5502],[204.04,5552],[207.05,5531],[210.0,5594],[213.0,5784],[216.0,5627],[219.01,5666],[222.01,5581],[225.01,5703],[228.01,5493],[231.04,5454],[234.0,5432],[237.0,5272],[240.01,5311],[243.0,5354],[246.03,5395],[249.03,5553],[252.01,5517],[255.0,5584],[258.01,5762],[261.01,6232],[264.01,7373],[267.0,6639],[270.02,6188],[273.02,6231],[276.0,6284],[279.02,6397],[282.03,6434],[285.03,6771],[288.01,7578],[291.02,7891],[294.01,7933],[297.01,8043],[300.01,8370],[303.0,8686],[306.01,8667],[309.02,8245],[312.01,8513],[315.01,8927],[318.0,9741],[321.0,9094],[324.02,8831],[327.03,8719],[330.01,8745],[333.02,8820],[336.08,8865],[339.01,8875],[342.0,9096],[345.05,9026],[348.0,9069],[351.01,9196],[354.0,9326],[357.02,9544],[360.01,8883],[363.01,8623],[366.02,8505],[369.02,8270],[372.02,8050],[375.02,8376],[378.06,8997],[381.0,9562],[384.05,10323],[387.02,11202],[390.01,12117],[393.01,11309],[396.0,10437],[399.0,10092],[402.02,9794],[405.01,10150],[408.03,10555],[411.0,11632],[414.0,11324],[417.02,10313],[420.04,9639],[423.0,9189],[426.03,9717],[429.01,9858],[432.04,9213],[435.02,8933],[438.0,8532],[441.02,8185],[444.03,8092],[447.02,8342],[450.04,8420],[453.02,8920],[456.05,8953],[459.0,8912],[462.02,8922],[465.04,9015],[468.03,9035],[471.05,9176],[474.01,9470],[477.02,9813],[480.02,9851],[483.03,10427],[486.02,9482],[489.02,8939],[492.04,9066],[495.02,9273],[498.03,9819],[501.03,10433],[504.03,11320],[507.0,10173],[510.03,9238],[513.02,8689],[516.0,8895],[519.0,9325],[522.01,9636],[525.05,10098],[528.0,10840],[531.02,12308],[534.01,12050],[537.03,10876],[540.02,9952],[543.03,9722],[546.0,9573],[549.02,9263],[552.01,9695],[555.05,10356],[558.01,11667],[561.02,9785],[564.02,9372],[567.01,9920],[570.01,10079],[573.04,9438],[576.01,9988],[579.04,10073],[582.03,9187],[585.03,9378],[588.03,10210],[591.0,10015],[594.01,10500],[597.02,10102],[600.01,9305],[603.02,8743],[606.04,8490],[609.04,8462],[612.05,8203],[615.0,8128],[618.02,8059],[621.05,7894],[624.02,7662],[627.01,7689],[630.05,7558],[633.01,6968],[636.0,7034],[639.01,6819],[642.01,6369],[645.02,6142],[648.01,6189],[651.02,5948],[654.04,6097],[657.05,5945],[660.03,5650],[663.05,5450],[666.06,5399],[669.03,5176],[672.03,5214],[675.01,5053],[678.06,4902],[681.0,4927],[684.03,4926],[687.0,4876],[687.01,4875]];
+const PEAK_LABELS = [{"mile":390.1,"ele":12136,"name":"Cottonwood Pass","unverified":false},{"mile":411.8,"ele":12033,"name":"Cumberland Pass","unverified":false},{"mile":532.1,"ele":12955,"name":"Engineer Pass","unverified":false},{"mile":557.8,"ele":11794,"name":"Ophir Pass","unverified":false}];
+
+const PROFILE_W = 1000, PROFILE_H = 90, PROFILE_MARGIN_TOP = 12, PROFILE_MARGIN_BOTTOM = 3;
+const TRACE_FADE_TAIL = 0.06;
+let profilePoints = [];
+
+function smoothPathD(points) {
+  let d = `${points[0][0].toFixed(1)},${points[0][1].toFixed(1)}`;
+  for (let i = 1; i < points.length - 1; i++) {
+    const [x0, y0] = points[i];
+    const [x1, y1] = points[i + 1];
+    const mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+    d += ` Q${x0.toFixed(1)},${y0.toFixed(1)} ${mx.toFixed(1)},${my.toFixed(1)}`;
+  }
+  const last = points[points.length - 1];
+  d += ` L${last[0].toFixed(1)},${last[1].toFixed(1)}`;
+  return d;
+}
+
+function buildElevationProfile() {
+  const eles = ELEVATION_PROFILE.map(p => p[1]);
+  const minE = Math.min(...eles), maxE = Math.max(...eles);
+  const totalMi = ELEVATION_PROFILE[ELEVATION_PROFILE.length - 1][0];
+  const usableH = PROFILE_H - PROFILE_MARGIN_TOP - PROFILE_MARGIN_BOTTOM;
+
+  profilePoints = ELEVATION_PROFILE.map(([mi, ele]) => {
+    const x = (mi / totalMi) * PROFILE_W;
+    const y = PROFILE_H - PROFILE_MARGIN_BOTTOM - ((ele - minE) / (maxE - minE)) * usableH;
+    return [x, y];
+  });
+
+  const curve = smoothPathD(profilePoints);
+  const d = `M0,${PROFILE_H} L${curve} L${PROFILE_W},${PROFILE_H} Z`;
+  profileBg.setAttribute('d', d);
+  profileFg.setAttribute('d', d);
+  traceLine.setAttribute('d', `M${curve}`);
+}
+
+function buildPeakLabels() {
+  const eles = ELEVATION_PROFILE.map(p => p[1]);
+  const minE = Math.min(...eles), maxE = Math.max(...eles);
+  const totalMi = ELEVATION_PROFILE[ELEVATION_PROFILE.length - 1][0];
+  const usableH = PROFILE_H - PROFILE_MARGIN_TOP - PROFILE_MARGIN_BOTTOM;
+  const container = document.getElementById('peakLabels');
+
+  PEAK_LABELS.forEach(({ mile, ele, name }) => {
+    const xFrac = mile / totalMi;
+    const yUnits = PROFILE_H - PROFILE_MARGIN_BOTTOM - ((ele - minE) / (maxE - minE)) * usableH;
+    const el = document.createElement('div');
+    el.className = 'peak-label';
+    el.style.left = `${xFrac * 100}%`;
+    el.style.bottom = `${(PROFILE_H - yUnits + 10).toFixed(1)}px`;
+    el.textContent = name;
+    container.appendChild(el);
+  });
+}
+
+function initOutroLabelTrigger() {
+  const outro = document.getElementById('outro');
+  const container = document.getElementById('peakLabels');
+  if (!outro || !container) return;
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        container.classList.toggle('visible', entry.isIntersecting);
+      });
+    },
+    { threshold: 0.15 }
+  );
+  observer.observe(outro);
+}
+
+buildElevationProfile();
+buildPeakLabels();
+initOutroLabelTrigger();
+
+function updateJourneyProgress(activeFeature, progress) {
+  if (!activeFeature) return;
+  let miles = 0;
+  for (const f of ROUTE_DATA.features) {
+    if (f.properties.order === activeFeature.properties.order) {
+      miles += f.properties.miles * progress;
+      break;
+    }
+    if (f.properties.order > activeFeature.properties.order) break;
+    miles += f.properties.miles;
+  }
+  const fraction = Math.min(1, Math.max(0, miles / TOTAL_MILES));
+
+  progressClipRect.setAttribute('width', (fraction * PROFILE_W).toFixed(1));
+
+  const tailStart = Math.max(0, fraction - TRACE_FADE_TAIL) * PROFILE_W;
+  const leadEdge = fraction * PROFILE_W;
+  traceGradientEl.setAttribute('x1', tailStart.toFixed(1));
+  traceGradientEl.setAttribute('x2', leadEdge.toFixed(1));
+  traceStopEnd.setAttribute('stop-color', '#BE7C2B');
+}
+
+/* ---------- Map setup ---------- */
+const map = new maplibregl.Map({
+  container: 'map',
+  style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+  center: [-105.5, 39.0],
+  zoom: 6,
+  pitch: 55,
+  bearing: -20,
+  attributionControl: { compact: true },
+});
+map.scrollZoom.disable();
+map.dragPan.disable();
+map.dragRotate.disable();
+map.doubleClickZoom.disable();
+map.touchZoomRotate.disable();
+map.keyboard.disable();
+
+function cameraForFeature(feature, extra, duration) {
+  let coords = feature.geometry.coordinates.slice();
+  if (extra) coords = coords.concat(extra);
+  const bounds = bboxOfCoords(coords);
+  const isMobile = window.innerWidth < 760;
+  const padding = isMobile
+    ? { top: 60, bottom: window.innerHeight * 0.52, left: 40, right: 40 }
+    : { top: 100, bottom: 100, left: window.innerWidth * 0.42, right: 100 };
+  map.fitBounds(bounds, {
+    padding,
+    duration: duration === undefined ? 1200 : duration,
+    easing: easeInOutCubic,
+    pitch: 55,
+    bearing: (feature.properties.order * 17) % 60 - 30,
+    essential: true,
+    maxZoom: 11,
+  });
+}
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+map.on('load', () => {
+  // Terrain (AWS open terrain tiles, terrarium encoding, no key required).
+  // Note: this is a free global DEM with fairly coarse native resolution
+  // in spots, and MapLibre's terrain mesh simplifies further with distance
+  // from the camera -- that's what shows up as "blurry" terrain farther
+  // from the route. That distance-based simplification isn't exposed as a
+  // configurable parameter in MapLibre's public API (setTerrain only
+  // takes `source` and `exaggeration`), so exaggeration is the only real
+  // lever available here. A keyed provider (Mapbox Terrain-DEM, MapTiler)
+  // would give sharper terrain throughout if that's worth an API key.
+  map.addSource('terrain-src', {
+    type: 'raster-dem',
+    tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+    tileSize: 256,
+    encoding: 'terrarium',
+    maxzoom: 14,
+  });
+  map.setTerrain({ source: 'terrain-src', exaggeration: 2.0 });
+
+  map.addLayer({
+    id: 'hillshade',
+    type: 'hillshade',
+    source: 'terrain-src',
+    paint: {
+      'hillshade-exaggeration': 0.3,
+      'hillshade-shadow-color': '#5C6B5E',
+      'hillshade-highlight-color': '#EAE1C7',
+      'hillshade-accent-color': '#5C6B5E',
+      'hillshade-illumination-direction': 315,
+    },
+  });
+
+  map.addSource('co-outline', {
+    type: 'geojson',
+    data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: CO_OUTLINE } },
+  });
+  map.addLayer({
+    id: 'co-outline-line',
+    type: 'line',
+    source: 'co-outline',
+    paint: { 'line-color': '#ffffff', 'line-width': 1, 'line-opacity': 0.18 },
+  });
+
+  // Full route source (static)
+  map.addSource('route-full', { type: 'geojson', data: ROUTE_DATA });
+
+  // FUTURE (not yet reached): dim
+  map.addLayer({
+    id: 'future-line',
+    type: 'line',
+    source: 'route-full',
+    filter: ['>', ['get', 'order'], -1],
+    paint: { 'line-color': '#EAE1C7', 'line-width': 2, 'line-opacity': 0.16 },
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+  });
+
+  // DONE (revealed): bright
+  map.addLayer({
+    id: 'done-line',
+    type: 'line',
+    source: 'route-full',
+    filter: ['==', ['get', 'order'], -999],
+    paint: { 'line-color': '#BE7C2B', 'line-width': 3.4, 'line-opacity': 0.95 },
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+  });
+
+  // ACTIVE segment (progressive draw while scrolling through current chapter)
+  map.addSource('active-seg', { type: 'geojson', data: emptyFC() });
+  map.addLayer({
+    id: 'active-line',
+    type: 'line',
+    source: 'active-seg',
+    paint: { 'line-color': '#F2A65A', 'line-width': 5, 'line-opacity': 1 },
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+  });
+  map.addLayer({
+    id: 'active-point',
+    type: 'circle',
+    source: 'active-seg',
+    filter: ['==', ['geometry-type'], 'Point'],
+    paint: {
+      'circle-radius': 6,
+      'circle-color': '#ffffff',
+      'circle-stroke-width': 3,
+      'circle-stroke-color': '#BE7C2B',
+    },
+  });
+
+  // Set the resting/initial camera to already match the opening chapter,
+  // so there's no wide establishing shot before the story begins.
+  const openingFeature = featureByChapter.get('plains');
+  if (openingFeature) {
+    cameraForFeature(openingFeature, null, 0);
+    updateJourneyProgress(openingFeature, 0);
+  }
+
+  initLiveLocation();
+  initScrollama();
+});
+
+function setRevealState(doneUpTo) {
+  map.setFilter('future-line', ['>', ['get', 'order'], doneUpTo]);
+  map.setFilter('done-line', ['<=', ['get', 'order'], doneUpTo]);
+}
+
+// Precomputed cumulative-distance lookup per feature, built once and reused.
+const cumDistCache = new Map();
+function getCumDist(feature) {
+  let entry = cumDistCache.get(feature);
+  if (entry) return entry;
+  const coords = feature.geometry.coordinates;
+  const cum = [0];
+  for (let i = 1; i < coords.length; i++) {
+    cum.push(cum[i - 1] + haversineMi(coords[i - 1], coords[i]));
+  }
+  entry = { coords, cum, total: cum[cum.length - 1] };
+  cumDistCache.set(feature, entry);
+  return entry;
+}
+function sliceFeatureByFraction(feature, frac) {
+  const { coords, cum, total } = getCumDist(feature);
+  if (frac <= 0) return [coords[0]];
+  if (frac >= 1) return coords;
+  const target = total * frac;
+  let lo = 0, hi = cum.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (cum[mid] < target) lo = mid + 1; else hi = mid;
+  }
+  const i = Math.max(1, lo);
+  const d0 = cum[i - 1], d1 = cum[i];
+  const t = d1 > d0 ? (target - d0) / (d1 - d0) : 0;
+  const a = coords[i - 1], b = coords[i];
+  const lon = a[0] + (b[0] - a[0]) * t;
+  const lat = a[1] + (b[1] - a[1]) * t;
+  return coords.slice(0, i).concat([[lon, lat]]);
+}
+function updateActiveSlice(feature, progress) {
+  if (progress <= 0.01) {
+    map.getSource('active-seg').setData(emptyFC());
+    return;
+  }
+  const sliced = sliceFeatureByFraction(feature, progress);
+  const tip = sliced[sliced.length - 1];
+  map.getSource('active-seg').setData({
+    type: 'FeatureCollection',
+    features: [lineFeature(sliced, {}), pointFeature(tip, {})],
+  });
+}
+
+/* ---------- Scrollama ---------- */
+function initScrollama() {
+  const scroller = scrollama();
+  let pendingProgressUpdate = null;
+  let rafHandle = null;
+
+  scroller
+    .setup({ step: '.chapter', offset: 0.6, progress: true })
+    .onStepEnter(({ element, direction }) => {
+      const key = element.dataset.chapterKey;
+      const feature = featureByChapter.get(key);
+      if (!feature) return;
+      cameraForFeature(feature, null);
+      const doneUpTo = direction === 'down' ? feature.properties.order - 1 : feature.properties.order;
+      setRevealState(doneUpTo);
+      updateJourneyProgress(feature, direction === 'down' ? 0 : 1);
+    })
+    .onStepExit(({ element, direction }) => {
+      const key = element.dataset.chapterKey;
+      const feature = featureByChapter.get(key);
+      if (!feature) return;
+      const doneUpTo = direction === 'down' ? feature.properties.order : feature.properties.order - 1;
+      setRevealState(doneUpTo);
+      map.getSource('active-seg') && map.getSource('active-seg').setData(emptyFC());
+      updateJourneyProgress(feature, direction === 'down' ? 1 : 0);
+    })
+    .onStepProgress(({ element, progress }) => {
+      const key = element.dataset.chapterKey;
+      pendingProgressUpdate = { key, progress };
+      if (rafHandle == null) {
+        rafHandle = requestAnimationFrame(() => {
+          rafHandle = null;
+          if (!pendingProgressUpdate) return;
+          const feature = featureByChapter.get(pendingProgressUpdate.key);
+          if (feature) {
+            updateActiveSlice(feature, pendingProgressUpdate.progress);
+            updateJourneyProgress(feature, pendingProgressUpdate.progress);
+          }
+        });
+      }
+    });
+
+  window.addEventListener('resize', scroller.resize);
+}
+
+/* ============================================================
+   Live location (Garmin MapShare)
+   Feed: https://share.garmin.com/rodeolabs
+   This calls a Netlify function the same way the Saddle to Paddle
+   map does -- point LIVE_LOCATION_ENDPOINT at a serverless function
+   that proxies share.garmin.com/rodeolabs's KML feed and returns
+   JSON shaped like fetchLiveLocation expects below. Until that
+   function exists on this site's Netlify deploy, the button stays
+   hidden (fetchLiveLocation fails silently), so this is safe to
+   ship ahead of the backend.
+   ============================================================ */
+const LIVE_LOCATION_ENDPOINT = '/.netlify/functions/live-location';
+const LIVE_LOCATION_FALLBACK = null; // no demo fallback -- button stays hidden until the feed is live
+
+let liveLocation = null;
+const liveBtn = document.getElementById('liveLocationBtn');
+
+async function fetchLiveLocation() {
+  try {
+    const res = await fetch(LIVE_LOCATION_ENDPOINT);
+    if (res.ok) return await res.json();
+  } catch (e) {
+    console.warn('Live location fetch failed (feed likely not live yet).', e);
+  }
+  return LIVE_LOCATION_FALLBACK;
+}
+
+const popupEl = document.getElementById('liveLocationPopup');
+const popName = document.getElementById('popName');
+const popLeg = document.getElementById('popLeg');
+const popCoords = document.getElementById('popCoords');
+const popTime = document.getElementById('popTime');
+
+// How far off the mapped route (in miles) a position can be before it's
+// just called "off route" rather than pinned to a specific leg.
+const ON_ROUTE_THRESHOLD_MI = 20;
+
+function getLiveRouteState(lat, lon) {
+  let minDist = Infinity;
+  let nearestKey = null;
+  let nearestFeature = null;
+  let nearestIdx = -1;
+  for (const ch of CHAPTERS) {
+    const feature = featureByChapter.get(ch.key);
+    if (!feature) continue;
+    const coords = feature.geometry.coordinates;
+    for (let i = 0; i < coords.length; i++) {
+      const d = haversineMi([lon, lat], coords[i]);
+      if (d < minDist) {
+        minDist = d;
+        nearestKey = ch.key;
+        nearestFeature = feature;
+        nearestIdx = i;
+      }
+    }
+  }
+  if (!nearestFeature || minDist > ON_ROUTE_THRESHOLD_MI) {
+    return { onRoute: false };
+  }
+  const coords = nearestFeature.geometry.coordinates;
+  const fraction = coords.length > 1 ? nearestIdx / (coords.length - 1) : 0;
+  const ch = CHAPTERS.find(c => c.key === nearestKey);
+  return { onRoute: true, chapterKey: nearestKey, chapter: ch, feature: nearestFeature, fraction };
+}
+
+function legLabelFromState(state) {
+  if (!state.onRoute) return 'Off route';
+  return `Riding \u00b7 ${state.chapter.title}`;
+}
+
+function formatTimeAgo(iso) {
+  const ms = Date.now() - new Date(iso).getTime();
+  const min = Math.round(ms / 60000);
+  if (min < 60) return `${min} min ago`;
+  const hr = Math.round(min / 60);
+  if (hr < 48) return `${hr} hr ago`;
+  return `${Math.round(hr / 24)} days ago`;
+}
+
+function updatePopupContent(loc, state) {
+  popName.textContent = 'Live rider position';
+  popLeg.textContent = legLabelFromState(state);
+  popCoords.textContent = `${loc.lat.toFixed(4)}, ${loc.lon.toFixed(4)}`;
+  popTime.textContent = `${formatTimeAgo(loc.timestampUTC)} (${new Date(loc.timestampUTC).toUTCString()})`;
+}
+
+function renderLiveLocation(loc) {
+  if (!loc) return; // no feed yet -- keep the button hidden
+  liveLocation = loc;
+  const src = map.getSource('live-position');
+  if (src) {
+    src.setData({ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [loc.lon, loc.lat] } });
+  }
+  liveBtn.classList.remove('hidden');
+  const liveCueDesktop = document.getElementById('liveCueDesktop');
+  if (liveCueDesktop) liveCueDesktop.classList.remove('hidden');
+  const liveBtnBottom = document.getElementById('liveLocationBtnBottom');
+  if (liveBtnBottom) liveBtnBottom.classList.remove('hidden');
+  liveBtn.title = `${loc.name || 'Live position'} \u00b7 last ping ${new Date(loc.timestampUTC).toUTCString()}`;
+  if (!popupEl.classList.contains('hidden')) {
+    updatePopupContent(loc, getLiveRouteState(loc.lat, loc.lon));
+  }
+}
+
+function initLiveLocation() {
+  map.addSource('live-position', { type: 'geojson', data: emptyFC() });
+  map.addLayer({
+    id: 'live-position-halo',
+    type: 'circle',
+    source: 'live-position',
+    paint: { 'circle-radius': 16, 'circle-color': '#BE7C2B', 'circle-opacity': 0.25 },
+  });
+  map.addLayer({
+    id: 'live-position-dot',
+    type: 'circle',
+    source: 'live-position',
+    paint: { 'circle-radius': 7, 'circle-color': '#BE7C2B', 'circle-stroke-width': 3, 'circle-stroke-color': '#ffffff' },
+  });
+
+  fetchLiveLocation().then(renderLiveLocation);
+
+  const LIVE_LOCATION_POLL_MS = 3 * 60 * 1000;
+  setInterval(() => { fetchLiveLocation().then(renderLiveLocation); }, LIVE_LOCATION_POLL_MS);
+
+  const closeBtn = document.getElementById('liveLocationClose');
+
+  function flyToLivePosition() {
+    map.flyTo({
+      center: [liveLocation.lon, liveLocation.lat],
+      zoom: 9,
+      pitch: 45,
+      bearing: 0,
+      duration: 1800,
+      essential: true,
+    });
+  }
+
+  function jumpToLiveLocation() {
+    if (!liveLocation) return;
+    const state = getLiveRouteState(liveLocation.lat, liveLocation.lon);
+
+    if (state.onRoute) {
+      const chapterEl = document.querySelector(`[data-chapter-key="${state.chapterKey}"]`);
+      if (chapterEl) chapterEl.scrollIntoView({ behavior: 'auto', block: 'center' });
+
+      const doneUpTo = state.feature.properties.order - 1;
+      setRevealState(doneUpTo);
+      updateActiveSlice(state.feature, state.fraction);
+      updateJourneyProgress(state.feature, state.fraction);
+
+      setTimeout(() => flyToLivePosition(), 120);
+    } else {
+      flyToLivePosition();
+    }
+
+    updatePopupContent(liveLocation, state);
+    popupEl.classList.remove('hidden');
+  }
+
+  liveBtn.addEventListener('click', jumpToLiveLocation);
+  const liveCueDesktopBtn = document.getElementById('liveCueDesktop');
+  if (liveCueDesktopBtn) liveCueDesktopBtn.addEventListener('click', jumpToLiveLocation);
+  const liveBtnBottom = document.getElementById('liveLocationBtnBottom');
+  if (liveBtnBottom) liveBtnBottom.addEventListener('click', jumpToLiveLocation);
+  closeBtn.addEventListener('click', () => popupEl.classList.add('hidden'));
+
+  if (window.matchMedia('(max-width:640px)').matches) {
+    const scrollCue = document.getElementById('scrollCue');
+    const scrollCueText = document.getElementById('scrollCueText');
+    if (scrollCue && scrollCueText) {
+      scrollCue.addEventListener('click', () => {
+        if (liveLocation) {
+          scrollCueText.textContent = 'CLICK TO JUMP TO LIVE POSITION';
+          scrollCue.classList.add('live-clickable');
+          jumpToLiveLocation();
+        }
+      });
+    }
+  }
+
+  window.addEventListener('scroll', () => {
+    if (!popupEl.classList.contains('hidden')) popupEl.classList.add('hidden');
+  }, { passive: true });
+}
+</script>
+</body>
+</html>
