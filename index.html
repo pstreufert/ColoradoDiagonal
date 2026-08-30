@@ -1345,6 +1345,19 @@ function initLiveLocation() {
   if (liveBtnBottom) liveBtnBottom.addEventListener('click', jumpToLiveLocation);
   closeBtn.addEventListener('click', () => popupEl.classList.add('hidden'));
 
+  // Hovering the dot on the map itself just shows the info box in place --
+  // no camera fly or scroll-to-chapter, unlike clicking the buttons above.
+  map.on('mouseenter', 'live-position-halo', () => {
+    if (!liveLocation) return;
+    map.getCanvas().style.cursor = 'pointer';
+    updatePopupContent(liveLocation, getLiveRouteState(liveLocation.lat, liveLocation.lon));
+    popupEl.classList.remove('hidden');
+  });
+  map.on('mouseleave', 'live-position-halo', () => {
+    map.getCanvas().style.cursor = '';
+    popupEl.classList.add('hidden');
+  });
+
   if (window.matchMedia('(max-width:640px)').matches) {
     const scrollCue = document.getElementById('scrollCue');
     const scrollCueText = document.getElementById('scrollCueText');
