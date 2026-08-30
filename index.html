@@ -291,7 +291,7 @@
     .card .miles-row .seg-mi,
     .card .miles-row .cum-mi{font-size:0.72rem;}
     .card .miles-row .cum-mi br{display:none;}
-    .card .miles-row .cum-mi b{font-size:inherit;font-weight:600;color:var(--text-on-paper);}
+    .card .miles-row .cum-mi b{font-size:inherit;font-weight:400;color:inherit;}
     .card-body{max-height:0;overflow:hidden;transition:max-height .3s ease;}
     .card-body.expanded{max-height:2000px;}
     .read-more-btn{
@@ -441,7 +441,7 @@
       </div>
       <div class="cta-row">
         <a class="cta" href="https://rodeo-labs.com/" target="_blank" rel="noopener">Rodeo Labs</a>
-        <a class="cta secondary" href="https://ridewithgps.com/routes/50533349" target="_blank" rel="noopener">View route on RideWithGPS</a>
+        <a class="cta secondary" href="https://ridewithgps.com/routes/50533349?privacy_code=s0AsbHeLAlqOIc7T3psGa3p4CiXFwfVN" target="_blank" rel="noopener">View route on RideWithGPS</a>
       </div>
       <a class="credit-btn" href="https://orionadventurecartography.netlify.app" target="_blank" rel="noopener">Cartography by Orion Adventure Maps</a>
     </div>
@@ -539,12 +539,12 @@ const CO_OUTLINE = [[-107.9197,41.0039],[-102.0539,41.0039],[-102.043,36.9948],[
 const CHAPTERS = [
   {
     key: "corner", type: 'route', order: 0,
-    number: 1, title: "The Corner", zone: "The Plains",
+    number: 1, title: "The Corner", zone: "Plains",
     mileStart: 0, mileEnd: 17.4,
     body: [
       `We start at the corner of a rectangle, the intersection of Colorado, Nebraska, and four different counties. No mountain, no river, nothing to photograph, just a spot where somebody’s survey line ended a long time ago. There is a small rock marking the spot with an old fence around it. The odd thing is that the lowest ground of the whole trip is back in Big Springs, Nebraska, about 250 feet below us, so the first thing we do is climb up to our own start line at four in the morning, in the dark.`
     ],
-    gain: 218,
+    gain: 240,
   },
   {
     key: "south_platte", type: 'route', order: 1,
@@ -553,7 +553,7 @@ const CHAPTERS = [
     body: [
       `A hundred and twenty-nine miles of following the South Platte river, and the route takes us through the towns rather than around them — Julesburg, Ovid, Sedgwick, Crook, Iliff, Sterling, Atwood, Merino, Hillrose, Brush, Fort Morgan. Shortgrass prairie the whole way, blue grama and buffalograss, which is about the driest grassland the Great Plains manages. Everyone assumes this will be the dull part, but that’s part of the assignment. We’re here to experience it all. Colorado’s first certified Dark Sky Park is out here off to the northwest, but we aim to pass through during the day.`
     ],
-    gain: 1635,
+    gain: 1774,
   },
   {
     key: "leaving_river", type: 'route', order: 2,
@@ -562,7 +562,7 @@ const CHAPTERS = [
     body: [
       `Here we let go of the river and head onto dryland, which on paper is fifty-two miles and 950 feet of climbing, and in practice will be an afternoon of heat with no water we can count on and whatever the wind decides to do. This is where the mountains show up on the horizon and then spend hours declining to get any closer. Somewhere under us the High Plains give way to the Colorado Piedmont, though I doubt we will notice. Roads will be paved and dirt alike.`
     ],
-    gain: 950,
+    gain: 1588,
   },
   {
     key: "urban_crossing", type: 'route', order: 3,
@@ -572,7 +572,7 @@ const CHAPTERS = [
       `The line runs straight through a city of three million people and manages to do most of it on bike paths, something like 27 car-free miles of Cherry Creek and then the South Platte. It is the only stretch with traffic lights, and for a while the riding actually gets easier. Even if we arrive at dark, it is also the brightest sky we will ride under, which is worth thinking about later on.`,
       `Come find us if you are local, or anywhere on the map, really.`
     ],
-    gain: 2130,
+    gain: 1904,
   },
   {
     key: "hogback_waterton", type: 'route', order: 4,
@@ -582,7 +582,7 @@ const CHAPTERS = [
       `Fifteen miles, 4,125 feet of climbing. For scale, the 253 miles of plains behind us added up to around 6,200 feet, so we get most of that back in a short, intense push. The river cuts right through the Dakota Hogback here, a wall of tilted sandstone, and then the canyon walls go to gneiss and granite that have been sitting there 1.7 billion years. Denver Water says about seventy bighorn sheep live in the canyon. I would like to see one. We usually see a dozen or three. Bears and mountain lions also lurk here. I hope we don’t see them.`,
       `We aim to make first camp on CT1 if we’re lucky.`
     ],
-    gain: 4125,
+    gain: 2474,
   },
   {
     key: "burn_scar", type: 'route', order: 5,
@@ -591,7 +591,7 @@ const CHAPTERS = [
     body: [
       `Forty-four miles through what the Hayman Fire left behind. That was June 2002, 137,760 acres, and something like 60,000 of them burned in a single day. These days forest fires boast much bigger numbers. Back then 60,000 was apocalyptic. Twenty-four years later it is granite domes and standing snags with a lot of young aspen coming in underneath. I know this area well from other rides. It is a strange and beautiful place to ride through, though punishing with its washboard and relentless rollers. Cheesman Dam sits down in the middle of it, finished in 1905, and the fire got to it on day two.`
     ],
-    gain: 6159,
+    gain: 5051,
   },
   {
     key: "south_park", type: 'route', order: 6,
@@ -600,7 +600,7 @@ const CHAPTERS = [
     body: [
       `Fifty miles of altitude. We never drop below 8,485 feet. South Park is a big open basin, with a TV show named after it. It is roughly fifty miles by thirty-five, sitting around 8,500 with fourteen-thousand-foot peaks standing all the way around the edge of it. The South Platte starts up here somewhere, which is the same river we spent 129 miles alongside down on the plains, so without really planning it we have come around to where that whole thing begins. Funny that people fight over every drop of rain and snow that falls up here. I water my lawn with the same water and feel terrible about it. Lawns are awful.`
     ],
-    gain: 3124,
+    gain: 2929,
   },
   {
     key: "the_divide", type: 'route', order: 7,
@@ -609,7 +609,7 @@ const CHAPTERS = [
     body: [
       `Twenty miles and 4,072 feet up to Cottonwood Pass at 12,136 feet, and this is the only time the whole route crosses the Continental Divide. Water on the east side of that ridge is headed for the Gulf of Mexico eventually, water on the west side is headed for the Gulf of California, and we get to sit up there for a minute in between. It is also the first ground we will be on with no trees on it: The alpine. I love the alpine so much. Hopefully it is kind to us up there.`
     ],
-    gain: 4072,
+    gain: 4565,
   },
   {
     key: "taylor_park", type: 'route', order: 8,
@@ -618,7 +618,7 @@ const CHAPTERS = [
     body: [
       `Taylor Park is a basin up above 9,000 feet that you can only get into by going over a pass, which is most of why it still looks the way it does. Some of the best parts of Colorado are protected by inconvenience. Tincup, then Cumberland Pass at 12,033 feet, then down into Pitkin. Cumberland comes within about a hundred feet of Cottonwood, though both of its sides drain into the Gunnison all the same. After that, one of the longest descents of the trip.`
     ],
-    gain: 4011,
+    gain: 3693,
   },
   {
     key: "la_garita", type: 'route', order: 9,
@@ -627,7 +627,7 @@ const CHAPTERS = [
     body: [
       `The emptiest 54 miles out here. No towns, no cell service, nowhere to bail out, and the course markers say things like Water and Decent Water, which tells you roughly what to expect. We also ride across the floor of the La Garita caldera, which threw out more than a thousand cubic miles of ash around 28 million years ago. Third largest eruption anybody knows about, and far too big to register from a bike.`
     ],
-    gain: 5276,
+    gain: 4512,
   },
   {
     key: "slumgullion", type: 'route', order: 10,
@@ -636,7 +636,7 @@ const CHAPTERS = [
     body: [
       `The highest ground of the trip and the most climbing in any one chapter, 7,844 feet of it, topping out at 12,955 feet on the Engineer Pass road. On the way up we go over the Slumgullion Earthflow, a landslide that is still sliding, as much as twenty feet a year, and that plugged the Lake Fork eight or nine hundred years ago to make Lake San Cristobal. Hours above treeline with no shelter, and storms can start by nine. I hope we make it. The San Juans can be brutal, and I’m in awe of them always.`
     ],
-    gain: 7844,
+    gain: 6348,
   },
   {
     key: "ophir", type: 'route', order: 11,
@@ -645,7 +645,7 @@ const CHAPTERS = [
     body: [
       `Silverton, then up and over Ophir Pass at 11,794 feet, east to west. The east side is a graded shelf road and perfectly civil, and then the west side turns into one lane cut across a scree field with nothing underneath it. This is the most exposed riding on the whole route, but not nearly the most exposed riding that I’ve done in the San Juans. I know this place well, and the Rodeo heart beats with adventures had here. After Ophir the alpine is done with us. I’ll be sad about it but also relieved. Next up is seventy-six miles of forest descent through the Dolores headwaters and the Groundhog country.`
     ],
-    gain: 8925,
+    gain: 7542,
   },
   {
     key: "sage_plain", type: 'route', order: 12,
@@ -654,7 +654,7 @@ const CHAPTERS = [
     body: [
       `Off the volcanic San Juans and onto the Colorado Plateau, which is completely different ground — sandstone, sagebrush, piñon and juniper, and a lot more sky. Sixty-three miles running the whole ecosystem ladder backwards, down into semi-desert country we have not touched once in the previous 625 miles. The Park Service puts the center of the darkest remaining skies in the contiguous United States about ten miles off this line, which should make for a good last night if that is when we arrive here. The Four Corners Monument does close at 7pm. I’d hate for the gate to be closed when we finish.`
     ],
-    gain: 2642,
+    gain: 2283,
   },
 ];
 
@@ -863,13 +863,12 @@ const traceGradientEl = document.getElementById('traceGradient');
 // order it's actually traveled.
 const TOTAL_MILES = Math.round(ROUTE_DATA.features.reduce((sum, f) => sum + f.properties.miles, 0));
 const HIGH_POINT_FT = 12955; // San Juans, Engineer Pass road (leg 11) -- confirmed against Steve's writeup
-// Sum of the 13 per-leg CHAPTERS.gain figures below: Steve's writeup gives
-// exact numbers for legs 3, 5, 8, 11 (950 / 4,125 / 4,072 / 7,844 ft); the
-// other 9 legs are GPS-noise-threshold estimates from the full-resolution
-// track. This total (51,111') replaces an earlier 44,362' placeholder that
-// predates this per-leg breakdown -- flag if you have a trusted whole-route
-// figure to reconcile against instead.
-const ELEV_GAIN_FT = CHAPTERS.reduce((sum, ch) => sum + ch.gain, 0);
+// Headline total from RideWithGPS. Per-leg CHAPTERS.gain figures below
+// were provided directly (presumably RideWithGPS's own per-segment
+// breakdown) and sum to 44,903 -- 541ft over this total. Flagged to Pete;
+// left as given rather than silently adjusted. If that gap gets resolved,
+// update either this constant or the affected leg(s).
+const ELEV_GAIN_FT = 44362;
 document.getElementById('statMiles').textContent = TOTAL_MILES.toLocaleString();
 document.getElementById('statGain').textContent = ELEV_GAIN_FT.toLocaleString() + "'";
 document.getElementById('outroMiles').textContent = TOTAL_MILES.toLocaleString();
