@@ -249,8 +249,26 @@
   }
   #liveLocationClose:hover{color:var(--paper);}
 
+  .live-label-marker{pointer-events:none;}
+  .live-label-inner{
+    background:rgba(29,36,32,0.88);
+    border:1px solid var(--line);
+    border-left:2px solid var(--ochre);
+    border-radius:4px;
+    padding:4px 8px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:9px;line-height:1.4;letter-spacing:0.04em;
+    color:var(--paper);
+    white-space:nowrap;
+    text-align:center;
+    box-shadow:0 4px 12px rgba(0,0,0,0.35);
+  }
+
   @media (max-width:640px){
-    #liveLocationBtn{display:none;}
+    #liveLocationBtn{
+      top:14px;right:14px;padding:8px 12px 8px 10px;font-size:10.5px;gap:7px;
+    }
+    #liveLocationBtn .btn-text{max-width:34vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     #liveCueDesktop{display:none;}
     .scroll-cue.live-clickable{cursor:pointer;}
     #liveLocationPopup{
@@ -270,6 +288,10 @@
     .card p{font-size:0.9rem;line-height:1.45;margin:0 0 8px;}
     .card .legkind{margin-bottom:6px;font-size:10px;}
     .card .miles-row{margin-top:12px;padding-top:10px;}
+    .card .miles-row .seg-mi,
+    .card .miles-row .cum-mi{font-size:0.72rem;}
+    .card .miles-row .cum-mi br{display:none;}
+    .card .miles-row .cum-mi b{font-size:inherit;font-weight:600;color:var(--text-on-paper);}
     .card-body{max-height:0;overflow:hidden;transition:max-height .3s ease;}
     .card-body.expanded{max-height:2000px;}
     .read-more-btn{
@@ -283,6 +305,11 @@
     .stamp{grid-template-columns:repeat(2,auto);}
     #peakLabels{display:none;}
   }
+
+  /* Pure scroll buffer between the last chapter and the outro -- no
+     content, no camera changes, just more time looking at the finished
+     route before the outro's dark overlay starts covering the map. */
+  #finale-pause{position:relative;z-index:5;height:70vh;}
 
   /* ---------- OUTRO / CTA ---------- */
   #outro{
@@ -399,6 +426,7 @@
 </div>
 
 <div id="story"></div>
+<div id="finale-pause"></div>
 
 <div id="outro">
   <div class="outro-grid">
@@ -659,7 +687,7 @@ CHAPTERS.forEach((ch) => {
       <button class="read-more-btn" type="button">Read more <span class="chevron">&darr;</span></button>
       <div class="miles-row">
         <span class="seg-mi">THIS LEG: ${miles.toFixed(1)} MI</span>
-        <span class="cum-mi">ELEVATION GAIN<br><b>${ch.gain.toLocaleString()} FT</b></span>
+        <span class="cum-mi">ELEVATION GAIN:<br><b>${ch.gain.toLocaleString()} FT</b></span>
       </div>
     </div>
   `;
@@ -1268,6 +1296,8 @@ function updatePopupContent(loc, state) {
   popTime.textContent = `${formatTimeAgo(loc.timestampUTC)} (${new Date(loc.timestampUTC).toUTCString()})`;
 }
 
+let liveLabelMarker = null;
+
 function renderLiveLocation(loc) {
   if (!loc) return; // no feed yet -- keep the button hidden
   liveLocation = loc;
@@ -1282,6 +1312,18 @@ function renderLiveLocation(loc) {
   if (!popupEl.classList.contains('hidden')) {
     updatePopupContent(loc, getLiveRouteState(loc.lat, loc.lon));
   }
+
+  // Small always-on floating label above the dot -- replaces relying on
+  // hover, which doesn't work on touchscreens and was unreliable even on
+  // desktop.
+  if (!liveLabelMarker) {
+    const el = document.createElement('div');
+    el.className = 'live-label-marker';
+    liveLabelMarker = new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, -12] });
+  }
+  liveLabelMarker.getElement().innerHTML =
+    `<div class="live-label-inner">LIVE RIDER POSITION<br>${formatTimeAgo(loc.timestampUTC)}</div>`;
+  liveLabelMarker.setLngLat([loc.lon, loc.lat]).addTo(map);
 }
 
 function initLiveLocation() {
@@ -1352,24 +1394,20 @@ function initLiveLocation() {
   if (liveCueDesktopBtn) liveCueDesktopBtn.addEventListener('click', jumpToLiveLocation);
   closeBtn.addEventListener('click', () => popupEl.classList.add('hidden'));
 
-  // Hovering the dot on the map itself just shows the info box in place --
-  // no camera fly or scroll-to-chapter, unlike clicking the buttons above.
-  // Also bound to click/tap, since hover has no equivalent on touchscreens.
+  // Clicking/tapping the dot on the map itself shows the fuller info
+  // popup (coordinates + leg) in place -- no camera fly or scroll-to-
+  // chapter, unlike clicking the buttons above. The small always-on
+  // floating label (added in renderLiveLocation) handles the "always
+  // visible" name+time display; this is for more detail on demand.
   function showDotPopup() {
     if (!liveLocation) return;
     updatePopupContent(liveLocation, getLiveRouteState(liveLocation.lat, liveLocation.lon));
     popupEl.classList.remove('hidden');
   }
-  map.on('mouseenter', 'live-position-halo', () => {
-    map.getCanvas().style.cursor = 'pointer';
-    showDotPopup();
-  });
-  map.on('mouseleave', 'live-position-halo', () => {
-    map.getCanvas().style.cursor = '';
-    popupEl.classList.add('hidden');
-  });
   map.on('click', 'live-position-halo', showDotPopup);
   map.on('click', 'live-position-dot', showDotPopup);
+  map.on('mouseenter', 'live-position-halo', () => { map.getCanvas().style.cursor = 'pointer'; });
+  map.on('mouseleave', 'live-position-halo', () => { map.getCanvas().style.cursor = ''; });
 
   if (window.matchMedia('(max-width:640px)').matches) {
     const scrollCue = document.getElementById('scrollCue');
