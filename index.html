@@ -155,6 +155,7 @@
     font-weight:700;font-size:2rem;line-height:1.02;margin:0 0 14px;
   }
   .card p{font-size:1rem;line-height:1.55;margin:0 0 12px;color:#3A3324;}
+  .read-more-btn{display:none;}
   .card .miles-row{
     margin-top:18px;padding-top:14px;border-top:1px solid #c2b585;
     display:flex;justify-content:space-between;align-items:baseline;
@@ -231,9 +232,6 @@
   #liveLocationPopup .pop-eyebrow{
     font-size:10px;letter-spacing:0.12em;color:var(--ochre);margin-bottom:8px;
   }
-  #liveLocationPopup .pop-name{
-    font-size:11px;color:var(--paper-dim);margin-bottom:4px;
-  }
   #liveLocationPopup .pop-leg{
     font-family:'Big Shoulders Display',sans-serif;font-weight:700;
     font-size:19px;line-height:1.15;color:var(--paper);
@@ -259,8 +257,7 @@
       top:auto;bottom:100px;right:16px;left:16px;width:auto;
       padding:8px 10px;
     }
-    #liveLocationPopup .pop-eyebrow,
-    #liveLocationPopup .pop-name{display:none;}
+    #liveLocationPopup .pop-eyebrow{display:none;}
     #liveLocationPopup .pop-leg{
       font-size:13px;line-height:1.1;margin-bottom:3px;padding-bottom:3px;
     }
@@ -273,6 +270,16 @@
     .card p{font-size:0.9rem;line-height:1.45;margin:0 0 8px;}
     .card .legkind{margin-bottom:6px;font-size:10px;}
     .card .miles-row{margin-top:12px;padding-top:10px;}
+    .card-body{max-height:0;overflow:hidden;transition:max-height .3s ease;}
+    .card-body.expanded{max-height:2000px;}
+    .read-more-btn{
+      display:inline-flex;align-items:center;gap:5px;
+      background:none;border:none;padding:2px 0 4px;margin:0;cursor:pointer;
+      font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;
+      color:var(--ochre-dim);
+    }
+    .read-more-btn .chevron{display:inline-block;transition:transform .25s ease;font-size:10px;}
+    .read-more-btn .chevron.up{transform:rotate(180deg);}
     .stamp{grid-template-columns:repeat(2,auto);}
     #peakLabels{display:none;}
   }
@@ -321,18 +328,6 @@
     background:transparent;color:var(--paper);border:1px solid var(--paper-dim);
   }
   #outro .cta.secondary:hover{background:rgba(255,255,255,0.06);}
-  #liveLocationBtnBottom{cursor:pointer;-webkit-appearance:none;appearance:none;}
-  #liveLocationBtnBottom{
-    display:inline-flex;align-items:center;gap:9px;
-    transition:opacity .4s ease, transform .2s ease;
-  }
-  #liveLocationBtnBottom.hidden{opacity:0;pointer-events:none;transform:translateY(4px);}
-  #liveLocationBtnBottom .dot-icon{
-    width:8px;height:8px;border-radius:50%;
-    background:var(--ochre);
-    animation:liveDotPulse 2s infinite;
-    flex-shrink:0;
-  }
   #outro .credit-btn{
     display:inline-flex;align-items:center;gap:8px;
     margin-top:14px;
@@ -380,8 +375,7 @@
 
 <div id="liveLocationPopup" class="hidden">
   <button id="liveLocationClose" aria-label="Close">&times;</button>
-  <div class="pop-eyebrow">LIVE POSITION</div>
-  <div class="pop-name" id="popName">&mdash;</div>
+  <div class="pop-eyebrow">LIVE RIDER POSITION</div>
   <div class="pop-leg" id="popLeg">&mdash;</div>
   <div class="pop-row"><span class="pop-label">Coordinates</span><span id="popCoords">&mdash;</span></div>
   <div class="pop-row"><span class="pop-label">Last ping</span><span id="popTime">&mdash;</span></div>
@@ -420,9 +414,6 @@
       <div class="cta-row">
         <a class="cta" href="https://rodeo-labs.com/" target="_blank" rel="noopener">Rodeo Labs</a>
         <a class="cta secondary" href="https://ridewithgps.com/routes/50533349" target="_blank" rel="noopener">View route on RideWithGPS</a>
-        <button class="cta secondary hidden" id="liveLocationBtnBottom">
-          <span class="dot-icon"></span> Jump to Current Location
-        </button>
       </div>
       <a class="credit-btn" href="https://orionadventurecartography.netlify.app" target="_blank" rel="noopener">Cartography by Orion Adventure Maps</a>
     </div>
@@ -649,7 +640,9 @@ ROUTE_DATA.features.forEach(f => {
 
 /* ---------- Build chapter DOM ----------
    Mirrors Steve's own writeup formatting: "MILE start-end · zone" tag,
-   then "{number} · {title}" heading, then one or more body paragraphs. */
+   then "{number} · {title}" heading, then one or more body paragraphs.
+   On mobile, the body collapses behind a "Read more" toggle so each
+   card doesn't eat the whole screen -- desktop always shows full text. */
 const storyEl = document.getElementById('story');
 CHAPTERS.forEach((ch) => {
   const feature = featureByChapter.get(ch.key);
@@ -662,7 +655,8 @@ CHAPTERS.forEach((ch) => {
     <div class="card">
       <div class="legkind"><span class="dot"></span>MILE ${ch.mileStart.toFixed(1)}&ndash;${ch.mileEnd.toFixed(1)} &middot; ${ch.zone.toUpperCase()}</div>
       <h2>${ch.title}</h2>
-      ${paragraphs}
+      <div class="card-body">${paragraphs}</div>
+      <button class="read-more-btn" type="button">Read more <span class="chevron">&darr;</span></button>
       <div class="miles-row">
         <span class="seg-mi">THIS LEG: ${miles.toFixed(1)} MI</span>
         <span class="cum-mi">ELEVATION GAIN<br><b>${ch.gain.toLocaleString()} FT</b></span>
@@ -670,6 +664,17 @@ CHAPTERS.forEach((ch) => {
     </div>
   `;
   storyEl.appendChild(div);
+});
+
+// Read-more toggle (mobile only -- the button is hidden entirely on
+// desktop via CSS, so this listener is inert there).
+storyEl.addEventListener('click', (e) => {
+  const btn = e.target.closest('.read-more-btn');
+  if (!btn) return;
+  const card = btn.closest('.card');
+  const body = card.querySelector('.card-body');
+  const expanded = body.classList.toggle('expanded');
+  btn.innerHTML = expanded ? 'Read less <span class="chevron up">&darr;</span>' : 'Read more <span class="chevron">&darr;</span>';
 });
 
 
@@ -1207,7 +1212,6 @@ async function fetchLiveLocation() {
 }
 
 const popupEl = document.getElementById('liveLocationPopup');
-const popName = document.getElementById('popName');
 const popLeg = document.getElementById('popLeg');
 const popCoords = document.getElementById('popCoords');
 const popTime = document.getElementById('popTime');
@@ -1259,7 +1263,6 @@ function formatTimeAgo(iso) {
 }
 
 function updatePopupContent(loc, state) {
-  popName.textContent = 'Live rider position';
   popLeg.textContent = legLabelFromState(state);
   popCoords.textContent = `${loc.lat.toFixed(4)}, ${loc.lon.toFixed(4)}`;
   popTime.textContent = `${formatTimeAgo(loc.timestampUTC)} (${new Date(loc.timestampUTC).toUTCString()})`;
@@ -1275,8 +1278,6 @@ function renderLiveLocation(loc) {
   liveBtn.classList.remove('hidden');
   const liveCueDesktop = document.getElementById('liveCueDesktop');
   if (liveCueDesktop) liveCueDesktop.classList.remove('hidden');
-  const liveBtnBottom = document.getElementById('liveLocationBtnBottom');
-  if (liveBtnBottom) liveBtnBottom.classList.remove('hidden');
   liveBtn.title = `${loc.name || 'Live position'} \u00b7 last ping ${new Date(loc.timestampUTC).toUTCString()}`;
   if (!popupEl.classList.contains('hidden')) {
     updatePopupContent(loc, getLiveRouteState(loc.lat, loc.lon));
@@ -1304,6 +1305,7 @@ function initLiveLocation() {
   setInterval(() => { fetchLiveLocation().then(renderLiveLocation); }, LIVE_LOCATION_POLL_MS);
 
   const closeBtn = document.getElementById('liveLocationClose');
+  let suppressScrollHide = false;
 
   function flyToLivePosition() {
     map.flyTo({
@@ -1319,6 +1321,11 @@ function initLiveLocation() {
   function jumpToLiveLocation() {
     if (!liveLocation) return;
     const state = getLiveRouteState(liveLocation.lat, liveLocation.lon);
+
+    // The scrollIntoView + flyTo below trigger their own scroll events,
+    // which would otherwise immediately re-hide the popup we're about to
+    // show (that's what caused it to take two clicks before).
+    suppressScrollHide = true;
 
     if (state.onRoute) {
       const chapterEl = document.querySelector(`[data-chapter-key="${state.chapterKey}"]`);
@@ -1336,27 +1343,33 @@ function initLiveLocation() {
 
     updatePopupContent(liveLocation, state);
     popupEl.classList.remove('hidden');
+
+    setTimeout(() => { suppressScrollHide = false; }, 2200);
   }
 
   liveBtn.addEventListener('click', jumpToLiveLocation);
   const liveCueDesktopBtn = document.getElementById('liveCueDesktop');
   if (liveCueDesktopBtn) liveCueDesktopBtn.addEventListener('click', jumpToLiveLocation);
-  const liveBtnBottom = document.getElementById('liveLocationBtnBottom');
-  if (liveBtnBottom) liveBtnBottom.addEventListener('click', jumpToLiveLocation);
   closeBtn.addEventListener('click', () => popupEl.classList.add('hidden'));
 
   // Hovering the dot on the map itself just shows the info box in place --
   // no camera fly or scroll-to-chapter, unlike clicking the buttons above.
-  map.on('mouseenter', 'live-position-halo', () => {
+  // Also bound to click/tap, since hover has no equivalent on touchscreens.
+  function showDotPopup() {
     if (!liveLocation) return;
-    map.getCanvas().style.cursor = 'pointer';
     updatePopupContent(liveLocation, getLiveRouteState(liveLocation.lat, liveLocation.lon));
     popupEl.classList.remove('hidden');
+  }
+  map.on('mouseenter', 'live-position-halo', () => {
+    map.getCanvas().style.cursor = 'pointer';
+    showDotPopup();
   });
   map.on('mouseleave', 'live-position-halo', () => {
     map.getCanvas().style.cursor = '';
     popupEl.classList.add('hidden');
   });
+  map.on('click', 'live-position-halo', showDotPopup);
+  map.on('click', 'live-position-dot', showDotPopup);
 
   if (window.matchMedia('(max-width:640px)').matches) {
     const scrollCue = document.getElementById('scrollCue');
@@ -1373,6 +1386,7 @@ function initLiveLocation() {
   }
 
   window.addEventListener('scroll', () => {
+    if (suppressScrollHide) return;
     if (!popupEl.classList.contains('hidden')) popupEl.classList.add('hidden');
   }, { passive: true });
 }
