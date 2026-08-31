@@ -1250,22 +1250,34 @@ const directionByKey = new Map();
 // that raw feed still reads as skips and stalls even without the reversal.
 // This adds a continuous smoother on top: `targetProgress` is the clamped,
 // trustworthy value from Scrollama; `displayedProgress` eases toward it
-// every frame on its own independent rAF loop, so the visible motion stays
-// fluid no matter how bursty the underlying updates are.
+// continuously, so the visible motion stays fluid no matter how bursty the
+// underlying updates are.
+//
+// Uses elapsed real time rather than a fixed amount per animation frame --
+// a fixed-per-frame factor assumes a steady ~60fps, and any frame-timing
+// jitter (plausible in an embedded iframe, which browsers can deprioritize)
+// makes that same factor produce visibly uneven, choppy motion. Decaying
+// based on actual elapsed milliseconds keeps the catch-up speed consistent
+// even when frame timing isn't.
 const targetProgressByKey = new Map();
 const displayedProgressByKey = new Map();
 let smoothActiveKey = null;
 let smoothRafHandle = null;
+let smoothLastTime = null;
+const SMOOTH_HALF_LIFE_MS = 80; // time to close half the remaining distance; lower = snappier, higher = smoother
 
-function tickSmoothing() {
+function tickSmoothing(now) {
   smoothRafHandle = null;
   const key = smoothActiveKey;
-  if (!key) return;
+  if (!key) { smoothLastTime = null; return; }
   const feature = featureByChapter.get(key);
-  if (!feature) return;
+  if (!feature) { smoothLastTime = null; return; }
   const target = targetProgressByKey.get(key) ?? 0;
   const current = displayedProgressByKey.get(key) ?? target;
-  const next = current + (target - current) * 0.22;
+  const dt = smoothLastTime == null ? 16 : Math.min(now - smoothLastTime, 64);
+  smoothLastTime = now;
+  const decay = Math.pow(0.5, dt / SMOOTH_HALF_LIFE_MS);
+  const next = target - (target - current) * decay;
   const settled = Math.abs(target - next) < 0.001;
   const value = settled ? target : next;
   displayedProgressByKey.set(key, value);
@@ -1273,6 +1285,8 @@ function tickSmoothing() {
   updateJourneyProgress(feature, value);
   if (!settled) {
     smoothRafHandle = requestAnimationFrame(tickSmoothing);
+  } else {
+    smoothLastTime = null;
   }
 }
 
@@ -1280,6 +1294,7 @@ function setTargetProgress(key, progress) {
   smoothActiveKey = key;
   targetProgressByKey.set(key, progress);
   if (smoothRafHandle == null) {
+    smoothLastTime = null;
     smoothRafHandle = requestAnimationFrame(tickSmoothing);
   }
 }
@@ -1289,7 +1304,7 @@ function initScrollama() {
   const scroller = scrollama();
 
   scroller
-    .setup({ step: '.chapter', offset: 0.6, progress: true })
+    .setup({ step: '.chapter', offset: 0.6, progress: true, threshold: 1 })
     .onStepEnter(({ element, direction }) => {
       const key = element.dataset.chapterKey;
       console.log(
@@ -1304,6 +1319,7 @@ function initScrollama() {
       displayedProgressByKey.set(key, startProgress);
       targetProgressByKey.set(key, startProgress);
       smoothActiveKey = key;
+      smoothLastTime = null;
       const feature = featureByChapter.get(key);
       if (!feature) return;
       cameraForFeature(feature, null);
