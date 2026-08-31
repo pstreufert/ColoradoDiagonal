@@ -156,6 +156,7 @@
   }
   .card p{font-size:1rem;line-height:1.55;margin:0 0 12px;color:#3A3324;}
   .read-more-btn{display:none;}
+  .card-preview{display:none;}
   .card .miles-row{
     margin-top:18px;padding-top:14px;border-top:1px solid #c2b585;
     display:flex;justify-content:space-between;align-items:baseline;
@@ -213,6 +214,22 @@
     100%{box-shadow:0 0 0 0 rgba(190,124,43,0);}
   }
 
+  #followSocialBtn{
+    position:fixed;top:72px;right:24px;z-index:9;
+    display:flex;align-items:center;
+    background:var(--paper);
+    border:1px solid var(--paper);
+    border-left:3px solid var(--ochre);
+    color:var(--text-on-paper);
+    padding:10px 18px 10px 14px;
+    border-radius:6px;
+    font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.04em;
+    text-decoration:none;
+    box-shadow:0 8px 24px rgba(0,0,0,0.35);
+    transition:transform .15s ease;
+  }
+  #followSocialBtn:hover{transform:translateY(-1px);}
+
   #liveLocationPopup{
     position:fixed;top:76px;right:24px;z-index:9;
     width:260px;
@@ -265,6 +282,7 @@
   }
 
   @media (max-width:640px){
+    #followSocialBtn{display:none;}
     #liveLocationBtn{
       top:14px;right:14px;padding:8px 12px 8px 10px;font-size:10.5px;gap:7px;
     }
@@ -292,6 +310,10 @@
     .card .miles-row .cum-mi{font-size:0.72rem;}
     .card .miles-row .cum-mi br{display:none;}
     .card .miles-row .cum-mi b{font-size:inherit;font-weight:400;color:inherit;}
+    .card-preview{
+      display:block;font-size:0.9rem;line-height:1.45;color:#3A3324;margin:0 0 4px;
+    }
+    .card-preview.hidden-preview{display:none;}
     .card-body{max-height:0;overflow:hidden;transition:max-height .3s ease;}
     .card-body.expanded{max-height:2000px;}
     .read-more-btn{
@@ -400,6 +422,10 @@
   <span class="btn-text">Where are they now?</span>
 </button>
 
+<a id="followSocialBtn" href="https://www.instagram.com/stevetheintern" target="_blank" rel="noopener">
+  Follow on social for updates
+</a>
+
 <div id="liveLocationPopup" class="hidden">
   <button id="liveLocationClose" aria-label="Close">&times;</button>
   <div class="pop-eyebrow">LIVE RIDER POSITION</div>
@@ -412,7 +438,7 @@
   <div class="hero-title-plate">
     <div class="eyebrow kicker">RODEO LABS</div>
     <h1>The Colorado <em>Diagonal</em></h1>
-    <p class="sub">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+    <p class="sub">Follow along with us on a journey through Colorado's geology, history, and beauty. It's an adventure on two wheels, inspired by the desire to see this state up close, and to earn our way across it using our hearts, lungs, and a little help from roughly 50,000 calories.</p>
   </div>
   <div class="stamp" id="statStamp">
     <div class="cell"><span class="num" id="statMiles">&mdash;</span><span class="lbl">Total Miles</span></div>
@@ -433,7 +459,7 @@
     <div class="outro-text">
       <div class="eyebrow">RODEO LABS &middot; SEPTEMBER 3&ndash;7</div>
       <h2>Colorado, corner to corner.</h2>
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam.</p>
+      <p>Did we make it? I sure hope our dot makes it this far. If it did, our heads are swimming with vistas and experiences that will stick with us forever. No matter what, we'll bring back some amazing stories and continue to share our love for this beautiful state long after the ride is over. Thank you for coming along!</p>
       <div class="outro-stats">
         <div class="cell"><span class="num" id="outroMiles">&mdash;</span><span class="lbl">Miles</span></div>
         <div class="cell"><span class="num" id="outroHighPoint">&mdash;</span><span class="lbl">High Point (San Juans)</span></div>
@@ -649,7 +675,7 @@ const CHAPTERS = [
   },
   {
     key: "sage_plain", type: 'route', order: 12,
-    number: 13, title: "The Great Sage Plain", zone: "the ladder in reverse, into semi-desert",
+    number: 13, title: "The Great Sage Plain", zone: "Into the semi-desert",
     mileStart: 624.7, mileEnd: 687.8,
     body: [
       `Off the volcanic San Juans and onto the Colorado Plateau, which is completely different ground — sandstone, sagebrush, piñon and juniper, and a lot more sky. Sixty-three miles running the whole ecosystem ladder backwards, down into semi-desert country we have not touched once in the previous 625 miles. The Park Service puts the center of the darkest remaining skies in the contiguous United States about ten miles off this line, which should make for a good last night if that is when we arrive here. The Four Corners Monument does close at 7pm. I’d hate for the gate to be closed when we finish.`
@@ -671,6 +697,13 @@ ROUTE_DATA.features.forEach(f => {
    then "{number} · {title}" heading, then one or more body paragraphs.
    On mobile, the body collapses behind a "Read more" toggle so each
    card doesn't eat the whole screen -- desktop always shows full text. */
+function truncateWords(text, maxLen) {
+  if (text.length <= maxLen) return text;
+  const cut = text.slice(0, maxLen);
+  const lastSpace = cut.lastIndexOf(' ');
+  return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trim();
+}
+
 const storyEl = document.getElementById('story');
 CHAPTERS.forEach((ch) => {
   const feature = featureByChapter.get(ch.key);
@@ -679,10 +712,12 @@ CHAPTERS.forEach((ch) => {
   div.className = 'chapter';
   div.dataset.chapterKey = ch.key;
   const paragraphs = ch.body.map(p => `<p>${p}</p>`).join('\n');
+  const preview = truncateWords(ch.body[0], 90);
   div.innerHTML = `
     <div class="card">
       <div class="legkind"><span class="dot"></span>MILE ${ch.mileStart.toFixed(1)}&ndash;${ch.mileEnd.toFixed(1)} &middot; ${ch.zone.toUpperCase()}</div>
       <h2>${ch.title}</h2>
+      <p class="card-preview">${preview}&hellip;</p>
       <div class="card-body">${paragraphs}</div>
       <button class="read-more-btn" type="button">Read more <span class="chevron">&darr;</span></button>
       <div class="miles-row">
@@ -694,14 +729,16 @@ CHAPTERS.forEach((ch) => {
   storyEl.appendChild(div);
 });
 
-// Read-more toggle (mobile only -- the button is hidden entirely on
-// desktop via CSS, so this listener is inert there).
+// Read-more toggle (mobile only -- the button and preview text are both
+// hidden entirely on desktop via CSS, so this listener is inert there).
 storyEl.addEventListener('click', (e) => {
   const btn = e.target.closest('.read-more-btn');
   if (!btn) return;
   const card = btn.closest('.card');
   const body = card.querySelector('.card-body');
+  const preview = card.querySelector('.card-preview');
   const expanded = body.classList.toggle('expanded');
+  preview.classList.toggle('hidden-preview', expanded);
   btn.innerHTML = expanded ? 'Read less <span class="chevron up">&darr;</span>' : 'Read more <span class="chevron">&darr;</span>';
 });
 
