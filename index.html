@@ -1067,10 +1067,6 @@ map.touchZoomRotate.disable();
 map.keyboard.disable();
 
 function cameraForFeature(feature, extra, duration) {
-  console.log(
-    `%c[t=${performance.now().toFixed(0)}] CAMERA -> order=${feature.properties.order}`,
-    'color:#0af'
-  );
   let coords = feature.geometry.coordinates.slice();
   if (extra) coords = coords.concat(extra);
   const bounds = bboxOfCoords(coords);
@@ -1078,9 +1074,17 @@ function cameraForFeature(feature, extra, duration) {
   const padding = isMobile
     ? { top: 60, bottom: window.innerHeight * 0.52, left: 40, right: 40 }
     : { top: 100, bottom: 100, left: window.innerWidth * 0.42, right: 100 };
+  // On mobile, a full ~1.2s animated flight with 3D terrain means
+  // sustained terrain-mesh re-rendering through the whole transition --
+  // scrolling through several chapters at a normal pace stacks these up
+  // and saturates the GPU/main thread, which is what was showing up as
+  // scroll "jumping." Snapping near-instantly keeps full 3D terrain at
+  // rest without the expensive sustained animation. Desktop keeps the
+  // cinematic flight.
+  const resolvedDuration = duration !== undefined ? duration : (isMobile ? 0 : 1200);
   map.fitBounds(bounds, {
     padding,
-    duration: duration === undefined ? 1200 : duration,
+    duration: resolvedDuration,
     easing: easeInOutCubic,
     pitch: 55,
     bearing: (feature.properties.order * 17) % 60 - 30,
@@ -1329,10 +1333,6 @@ function initScrollama() {
     .setup({ step: '.chapter', offset: 0.6, progress: true, threshold: 1 })
     .onStepEnter(({ element, direction }) => {
       const key = element.dataset.chapterKey;
-      console.log(
-        `%c[t=${performance.now().toFixed(0)}] STEP ENTER "${key}" dir=${direction}`,
-        'color:#0a8; font-weight:bold'
-      );
       directionByKey.set(key, direction);
       const startProgress = direction === 'down' ? 0 : 1;
       extremeProgressByKey.set(key, startProgress);
@@ -1351,10 +1351,6 @@ function initScrollama() {
     })
     .onStepExit(({ element, direction }) => {
       const key = element.dataset.chapterKey;
-      console.log(
-        `%c[t=${performance.now().toFixed(0)}] STEP EXIT  "${key}" dir=${direction}`,
-        'color:#a80; font-weight:bold'
-      );
       const feature = featureByChapter.get(key);
       if (!feature) return;
       const doneUpTo = direction === 'down' ? feature.properties.order : feature.properties.order - 1;
