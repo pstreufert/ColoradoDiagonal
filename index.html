@@ -32,7 +32,7 @@
   ::selection{background:var(--ochre);color:var(--paper);}
 
   #map{position:fixed;inset:0;width:100%;height:100%;}
-  #map-veil{position:fixed;inset:0;pointer-events:none;background:linear-gradient(180deg, rgba(29,36,32,0.55) 0%, rgba(29,36,32,0.05) 18%, rgba(29,36,32,0.05) 82%, rgba(38,47,41,0.9) 100%);z-index:2;}
+  #map-veil{position:fixed;inset:0;pointer-events:none;background:linear-gradient(180deg, rgba(29,36,32,0.55) 0%, rgba(29,36,32,0.05) 18%, rgba(29,36,32,0.05) 82%, rgba(38,47,41,0.9) 100%);z-index:2;will-change:transform;}
 
   .eyebrow{
     font-family:'JetBrains Mono',monospace;
@@ -169,11 +169,12 @@
   #elevationProfile{
     position:fixed;left:0;bottom:0;width:100%;height:90px;z-index:6;
     pointer-events:none;
+    will-change:transform;
   }
   #profileBg{fill:rgba(234,225,199,0.14);}
   #profileFg{fill:#ffffff;}
   #traceLine{stroke-width:2.5;vector-effect:non-scaling-stroke;}
-  #peakLabels{position:fixed;left:0;bottom:0;width:100%;height:90px;z-index:6;pointer-events:none;}
+  #peakLabels{position:fixed;left:0;bottom:0;width:100%;height:90px;z-index:6;pointer-events:none;will-change:transform;}
   .peak-label{
     position:absolute;
     transform:rotate(-38deg);
@@ -188,6 +189,7 @@
   #topRightControls{
     position:fixed;top:24px;right:24px;z-index:9;
     display:flex;align-items:center;gap:12px;
+    will-change:transform;
   }
   #liveLocationBtn{
     display:flex;align-items:center;gap:10px;
@@ -247,6 +249,7 @@
     backdrop-filter:blur(4px);
     opacity:1;transform:translateY(0);
     transition:opacity .3s ease, transform .3s ease;
+    will-change:transform, opacity;
   }
   #liveLocationPopup.hidden{opacity:0;transform:translateY(-8px);pointer-events:none;}
   #liveLocationPopup .pop-eyebrow{
@@ -1045,11 +1048,6 @@ function updateJourneyProgress(activeFeature, progress) {
 }
 
 /* ---------- Map setup ---------- */
-// Used to skip expensive-on-mobile features (3D terrain, continuous
-// per-frame scroll easing) below -- declared once, up top, since both
-// the terrain setup and the scroll-progress smoothing need it.
-const IS_MOBILE_DEVICE = window.matchMedia('(max-width:640px)').matches;
-
 const map = new maplibregl.Map({
   container: 'map',
   style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
@@ -1074,17 +1072,9 @@ function cameraForFeature(feature, extra, duration) {
   const padding = isMobile
     ? { top: 60, bottom: window.innerHeight * 0.52, left: 40, right: 40 }
     : { top: 100, bottom: 100, left: window.innerWidth * 0.42, right: 100 };
-  // On mobile, a full ~1.2s animated flight with 3D terrain means
-  // sustained terrain-mesh re-rendering through the whole transition --
-  // scrolling through several chapters at a normal pace stacks these up
-  // and saturates the GPU/main thread, which is what was showing up as
-  // scroll "jumping." Snapping near-instantly keeps full 3D terrain at
-  // rest without the expensive sustained animation. Desktop keeps the
-  // cinematic flight.
-  const resolvedDuration = duration !== undefined ? duration : (isMobile ? 0 : 1200);
   map.fitBounds(bounds, {
     padding,
-    duration: resolvedDuration,
+    duration: duration === undefined ? 1200 : duration,
     easing: easeInOutCubic,
     pitch: 55,
     bearing: (feature.properties.order * 17) % 60 - 30,
@@ -1356,30 +1346,19 @@ function initScrollama() {
       const doneUpTo = direction === 'down' ? feature.properties.order : feature.properties.order - 1;
       setRevealState(doneUpTo);
       const exitProgress = direction === 'down' ? 1 : 0;
-      if (IS_MOBILE_DEVICE) {
-        updateActiveSlice(feature, exitProgress);
-      } else {
-        extremeProgressByKey.set(key, exitProgress);
-        setTargetProgress(key, exitProgress);
-      }
+      extremeProgressByKey.set(key, exitProgress);
+      setTargetProgress(key, exitProgress);
       updateJourneyProgress(feature, exitProgress);
     })
     .onStepProgress(({ element, progress }) => {
       const key = element.dataset.chapterKey;
       const feature = featureByChapter.get(key);
       if (!feature) return;
-      if (IS_MOBILE_DEVICE) {
-        // Old, pre-smoothing behavior: apply Scrollama's raw progress
-        // directly, no clamping, no easing, no frame throttling.
-        updateActiveSlice(feature, progress);
-        updateJourneyProgress(feature, progress);
-      } else {
-        const dir = directionByKey.get(key) || 'down';
-        const prevExtreme = extremeProgressByKey.get(key) ?? (dir === 'down' ? 0 : 1);
-        const clamped = dir === 'down' ? Math.max(progress, prevExtreme) : Math.min(progress, prevExtreme);
-        extremeProgressByKey.set(key, clamped);
-        setTargetProgress(key, clamped);
-      }
+      const dir = directionByKey.get(key) || 'down';
+      const prevExtreme = extremeProgressByKey.get(key) ?? (dir === 'down' ? 0 : 1);
+      const clamped = dir === 'down' ? Math.max(progress, prevExtreme) : Math.min(progress, prevExtreme);
+      extremeProgressByKey.set(key, clamped);
+      setTargetProgress(key, clamped);
     });
 
   // Debounced rather than firing on every resize event: updates the stable
