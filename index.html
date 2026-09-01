@@ -1319,10 +1319,50 @@ function setTargetProgress(key, progress) {
 function initScrollama() {
   const scroller = scrollama();
 
+  // Tracks whichever chapter is currently "active" per Scrollama's own
+  // enter/exit boundary detection (reliable -- these are threshold
+  // crossings, not continuous tracking, so IntersectionObserver handles
+  // them fine). The actual progress *within* that chapter is computed
+  // separately below, directly from scroll position every animation
+  // frame, bypassing onStepProgress entirely.
+  let currentProgressKey = null;
+
+  function computeChapterProgress(key) {
+    const el = document.querySelector(`.chapter[data-chapter-key="${key}"]`);
+    if (!el) return 0;
+    const rect = el.getBoundingClientRect();
+    const triggerY = window.innerHeight * 0.6; // matches the offset:0.6 below
+    return Math.min(1, Math.max(0, (triggerY - rect.top) / rect.height));
+  }
+
+  // IntersectionObserver (what onStepProgress is built on) is allowed to
+  // batch or defer its callbacks -- browsers weren't designed to fire it
+  // continuously at animation speed, and mobile in particular can defer
+  // it heavily during momentum scrolling. That's what was causing progress
+  // to sit still while scrolling, then resolve all at once once the
+  // scroll settled. Driving progress from a plain rAF loop instead reads
+  // the real scroll position every frame regardless of any of that.
+  function progressRafLoop() {
+    if (currentProgressKey) {
+      const feature = featureByChapter.get(currentProgressKey);
+      if (feature) {
+        const progress = computeChapterProgress(currentProgressKey);
+        const dir = directionByKey.get(currentProgressKey) || 'down';
+        const prevExtreme = extremeProgressByKey.get(currentProgressKey) ?? (dir === 'down' ? 0 : 1);
+        const clamped = dir === 'down' ? Math.max(progress, prevExtreme) : Math.min(progress, prevExtreme);
+        extremeProgressByKey.set(currentProgressKey, clamped);
+        setTargetProgress(currentProgressKey, clamped);
+      }
+    }
+    requestAnimationFrame(progressRafLoop);
+  }
+  requestAnimationFrame(progressRafLoop);
+
   scroller
-    .setup({ step: '.chapter', offset: 0.6, progress: true, threshold: 20 })
+    .setup({ step: '.chapter', offset: 0.6 })
     .onStepEnter(({ element, direction }) => {
       const key = element.dataset.chapterKey;
+      currentProgressKey = key;
       directionByKey.set(key, direction);
       const startProgress = direction === 'down' ? 0 : 1;
       extremeProgressByKey.set(key, startProgress);
@@ -1349,16 +1389,7 @@ function initScrollama() {
       extremeProgressByKey.set(key, exitProgress);
       setTargetProgress(key, exitProgress);
       updateJourneyProgress(feature, exitProgress);
-    })
-    .onStepProgress(({ element, progress }) => {
-      const key = element.dataset.chapterKey;
-      const feature = featureByChapter.get(key);
-      if (!feature) return;
-      const dir = directionByKey.get(key) || 'down';
-      const prevExtreme = extremeProgressByKey.get(key) ?? (dir === 'down' ? 0 : 1);
-      const clamped = dir === 'down' ? Math.max(progress, prevExtreme) : Math.min(progress, prevExtreme);
-      extremeProgressByKey.set(key, clamped);
-      setTargetProgress(key, clamped);
+      if (currentProgressKey === key) currentProgressKey = null;
     });
 
   // Debounced rather than firing on every resize event: updates the stable
