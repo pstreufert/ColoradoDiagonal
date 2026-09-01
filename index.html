@@ -1045,6 +1045,11 @@ function updateJourneyProgress(activeFeature, progress) {
 }
 
 /* ---------- Map setup ---------- */
+// Used to skip expensive-on-mobile features (3D terrain, continuous
+// per-frame scroll easing) below -- declared once, up top, since both
+// the terrain setup and the scroll-progress smoothing need it.
+const IS_MOBILE_DEVICE = window.matchMedia('(max-width:640px)').matches;
+
 const map = new maplibregl.Map({
   container: 'map',
   style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
@@ -1276,15 +1281,11 @@ let smoothRafHandle = null;
 let smoothLastTime = null;
 const SMOOTH_HALF_LIFE_MS = 80; // time to close half the remaining distance; lower = snappier, higher = smoother
 
-// The continuous easing below calls map.setData() every animation frame
-// while catching up to a new target -- real WebGL re-tessellation work,
-// 60x/sec, competing with the browser's scroll compositor. Desktop GPUs
-// handle that fine; on mobile it was making scroll feel choppy, especially
-// during active touch-scroll where the main thread is already contended.
-// So: skip the easing on mobile and apply the (already direction-clamped
-// upstream) value directly instead -- cheap, and closer to how the old
-// pre-smoothing method behaved, just scoped to mobile only.
-const IS_MOBILE_DEVICE = window.matchMedia('(max-width:640px)').matches;
+// This eases toward each new target rather than snapping directly, so
+// bursty/uneven raw Scrollama progress reads as fluid motion instead of
+// stalls and jumps. Mobile bypasses this function entirely (see the
+// Scrollama handlers below) and applies raw progress directly instead --
+// this smoothing is desktop-only.
 
 function tickSmoothing(now) {
   smoothRafHandle = null;
@@ -1312,16 +1313,6 @@ function tickSmoothing(now) {
 
 function setTargetProgress(key, progress) {
   targetProgressByKey.set(key, progress);
-
-  if (IS_MOBILE_DEVICE) {
-    displayedProgressByKey.set(key, progress);
-    const feature = featureByChapter.get(key);
-    if (feature) {
-      updateActiveSlice(feature, progress);
-      updateJourneyProgress(feature, progress);
-    }
-    return;
-  }
 
   smoothActiveKey = key;
   if (smoothRafHandle == null) {
@@ -1368,14 +1359,25 @@ function initScrollama() {
       if (!feature) return;
       const doneUpTo = direction === 'down' ? feature.properties.order : feature.properties.order - 1;
       setRevealState(doneUpTo);
-      extremeProgressByKey.set(key, direction === 'down' ? 1 : 0);
-      setTargetProgress(key, direction === 'down' ? 1 : 0);
-      updateJourneyProgress(feature, direction === 'down' ? 1 : 0);
+      const exitProgress = direction === 'down' ? 1 : 0;
+      if (IS_MOBILE_DEVICE) {
+        updateActiveSlice(feature, exitProgress);
+      } else {
+        extremeProgressByKey.set(key, exitProgress);
+        setTargetProgress(key, exitProgress);
+      }
+      updateJourneyProgress(feature, exitProgress);
     })
     .onStepProgress(({ element, progress }) => {
       const key = element.dataset.chapterKey;
       const feature = featureByChapter.get(key);
-      if (feature) {
+      if (!feature) return;
+      if (IS_MOBILE_DEVICE) {
+        // Old, pre-smoothing behavior: apply Scrollama's raw progress
+        // directly, no clamping, no easing, no frame throttling.
+        updateActiveSlice(feature, progress);
+        updateJourneyProgress(feature, progress);
+      } else {
         const dir = directionByKey.get(key) || 'down';
         const prevExtreme = extremeProgressByKey.get(key) ?? (dir === 'down' ? 0 : 1);
         const clamped = dir === 'down' ? Math.max(progress, prevExtreme) : Math.min(progress, prevExtreme);
