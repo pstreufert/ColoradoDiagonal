@@ -321,8 +321,12 @@
       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
       flex:0 0 34px;
       min-height:72px;
+      margin:0;
       background:var(--paper);
       border:none;border-top:5px solid var(--ochre);
+      border-radius:0;
+      appearance:none;-webkit-appearance:none;
+      outline:none;box-shadow:none;
       cursor:pointer;-webkit-tap-highlight-color:transparent;padding:0;
     }
     .collapse-btn .chevron{
@@ -334,6 +338,7 @@
       font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.1em;
       color:var(--ochre);
       white-space:nowrap;
+      padding:10px 0;
     }
     .collapse-btn .tab-label .label-title{display:none;}
     #story.legs-collapsed .collapse-btn .tab-label .label-hide{display:none;}
@@ -779,7 +784,7 @@ CHAPTERS.forEach((ch) => {
   div.dataset.chapterKey = ch.key;
   const paragraphs = ch.body.map(p => `<p>${p}</p>`).join('\n');
   const preview = truncateWords(ch.body[0], 90);
-  const tabTitle = truncateWords(ch.title, 18) + (ch.title.length > 18 ? '\u2026' : '');
+  const tabTitle = `${ch.mileStart.toFixed(1)}\u2013${ch.mileEnd.toFixed(1)} MI`;
   div.innerHTML = `
     <div class="leg-row">
       <div class="card">
