@@ -315,22 +315,25 @@
     .chapter .card{
       max-width:100%;width:calc(100% - 34px);padding:18px 16px 14px;
       min-width:0;overflow:hidden;
+      box-shadow:none;
       transition:width .4s cubic-bezier(.4,0,.2,1), padding .4s cubic-bezier(.4,0,.2,1), opacity .3s ease;
     }
     .collapse-btn{
-      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+      display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
       flex:0 0 34px;
       min-height:72px;
       margin:0;
+      padding-top:14px;
       background:var(--paper);
       border:none;border-top:5px solid var(--ochre);
       border-radius:0;
       appearance:none;-webkit-appearance:none;
       outline:none;box-shadow:none;
-      cursor:pointer;-webkit-tap-highlight-color:transparent;padding:0;
+      cursor:pointer;-webkit-tap-highlight-color:transparent;
     }
     .collapse-btn .chevron{
       color:var(--ochre);font-size:15px;line-height:1;
+      margin-bottom:14px;
       transition:transform .4s cubic-bezier(.4,0,.2,1);
     }
     .collapse-btn .tab-label{
@@ -338,7 +341,7 @@
       font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.1em;
       color:var(--ochre);
       white-space:nowrap;
-      padding:10px 0;
+      padding-bottom:14px;
     }
     .collapse-btn .tab-label .label-title{display:none;}
     #story.legs-collapsed .collapse-btn .tab-label .label-hide{display:none;}
