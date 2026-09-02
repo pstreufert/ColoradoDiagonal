@@ -136,6 +136,8 @@
     align-items:center;
     padding:6vh 6vw;
   }
+  .leg-row{display:flex;align-items:stretch;}
+  .collapse-btn{display:none;}
   .chapter .card{
     max-width:460px;
     background:var(--paper);
@@ -309,7 +311,32 @@
     #liveLocationPopup .pop-row:first-of-type{display:none;}
     #liveLocationClose{top:4px;right:6px;font-size:16px;padding:2px;}
     .chapter{padding: calc(var(--vh, 1vh) * 4) 5vw;}
-    .chapter .card{max-width:100%;padding:18px 16px 14px;}
+    .leg-row{width:100%;justify-content:flex-start;}
+    .chapter .card{
+      max-width:100%;width:calc(100% - 34px);padding:18px 16px 14px;
+      min-width:0;overflow:hidden;
+      transition:width .4s cubic-bezier(.4,0,.2,1), padding .4s cubic-bezier(.4,0,.2,1), opacity .3s ease;
+    }
+    .collapse-btn{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+      flex:0 0 34px;
+      background:var(--paper);
+      border:none;border-top:5px solid var(--ochre);
+      cursor:pointer;-webkit-tap-highlight-color:transparent;padding:0;
+    }
+    .collapse-btn .chevron{
+      color:var(--ochre);font-size:15px;line-height:1;
+      transition:transform .4s cubic-bezier(.4,0,.2,1);
+    }
+    .collapse-btn .tab-label{
+      writing-mode:vertical-rl;
+      font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.1em;
+      color:var(--ochre);
+    }
+    #story.legs-collapsed .chapter .card{
+      width:0;padding-left:0;padding-right:0;opacity:0;
+    }
+    #story.legs-collapsed .collapse-btn .chevron{transform:rotate(180deg);}
     .card h2{font-size:1.55rem;margin:0 0 10px;}
     .card p{font-size:0.9rem;line-height:1.45;margin:0 0 8px;}
     .card .legkind{margin-bottom:6px;font-size:10px;}
@@ -747,16 +774,22 @@ CHAPTERS.forEach((ch) => {
   const paragraphs = ch.body.map(p => `<p>${p}</p>`).join('\n');
   const preview = truncateWords(ch.body[0], 90);
   div.innerHTML = `
-    <div class="card">
-      <div class="legkind"><span class="dot"></span>MILE ${ch.mileStart.toFixed(1)}&ndash;${ch.mileEnd.toFixed(1)} &middot; ${ch.zone.toUpperCase()}</div>
-      <h2>${ch.title}</h2>
-      <p class="card-preview">${preview}&hellip;</p>
-      <div class="card-body">${paragraphs}</div>
-      <button class="read-more-btn" type="button">Read more <span class="chevron">&darr;</span></button>
-      <div class="miles-row">
-        <span class="seg-mi">THIS LEG: ${miles.toFixed(1)} MI</span>
-        <span class="cum-mi">ELEVATION GAIN:<br><b>${ch.gain.toLocaleString()} FT</b></span>
+    <div class="leg-row">
+      <div class="card">
+        <div class="legkind"><span class="dot"></span>MILE ${ch.mileStart.toFixed(1)}&ndash;${ch.mileEnd.toFixed(1)} &middot; ${ch.zone.toUpperCase()}</div>
+        <h2>${ch.title}</h2>
+        <p class="card-preview">${preview}&hellip;</p>
+        <div class="card-body">${paragraphs}</div>
+        <button class="read-more-btn" type="button">Read more <span class="chevron">&darr;</span></button>
+        <div class="miles-row">
+          <span class="seg-mi">THIS LEG: ${miles.toFixed(1)} MI</span>
+          <span class="cum-mi">ELEVATION GAIN:<br><b>${ch.gain.toLocaleString()} FT</b></span>
+        </div>
       </div>
+      <button class="collapse-btn" type="button" aria-label="Hide chapter text">
+        <span class="chevron">&#8249;</span>
+        <span class="tab-label">HIDE</span>
+      </button>
     </div>
   `;
   storyEl.appendChild(div);
@@ -773,6 +806,22 @@ storyEl.addEventListener('click', (e) => {
   const expanded = body.classList.toggle('expanded');
   preview.classList.toggle('hidden-preview', expanded);
   btn.innerHTML = expanded ? 'Read less <span class="chevron up">&darr;</span>' : 'Read more <span class="chevron">&darr;</span>';
+});
+
+// Collapse-all toggle (mobile only -- the button is hidden entirely on
+// desktop via CSS). Any one of the per-leg buttons on the right edge
+// collapses or expands every leg together, sliding left as a unit to
+// reveal the map -- not just the leg whose button was tapped.
+storyEl.addEventListener('click', (e) => {
+  const btn = e.target.closest('.collapse-btn');
+  if (!btn) return;
+  const collapsed = storyEl.classList.toggle('legs-collapsed');
+  storyEl.querySelectorAll('.tab-label').forEach((el) => {
+    el.textContent = collapsed ? 'SHOW' : 'HIDE';
+  });
+  storyEl.querySelectorAll('.collapse-btn').forEach((el) => {
+    el.setAttribute('aria-label', collapsed ? 'Show chapter text' : 'Hide chapter text');
+  });
 });
 
 
