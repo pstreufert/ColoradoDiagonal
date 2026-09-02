@@ -320,6 +320,7 @@
     .collapse-btn{
       display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
       flex:0 0 34px;
+      min-height:72px;
       background:var(--paper);
       border:none;border-top:5px solid var(--ochre);
       cursor:pointer;-webkit-tap-highlight-color:transparent;padding:0;
@@ -332,10 +333,15 @@
       writing-mode:vertical-rl;
       font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.1em;
       color:var(--ochre);
+      white-space:nowrap;
     }
+    .collapse-btn .tab-label .label-title{display:none;}
+    #story.legs-collapsed .collapse-btn .tab-label .label-hide{display:none;}
+    #story.legs-collapsed .collapse-btn .tab-label .label-title{display:inline;}
     #story.legs-collapsed .chapter .card{
-      width:0;padding-left:0;padding-right:0;opacity:0;box-shadow:none;
+      width:0;height:0;max-height:0;padding:0;border-top-width:0;opacity:0;box-shadow:none;
     }
+    #story.legs-collapsed .leg-row{align-items:flex-start;}
     #story.legs-collapsed .collapse-btn .chevron{transform:rotate(180deg);}
     .card h2{font-size:1.55rem;margin:0 0 10px;}
     .card p{font-size:0.9rem;line-height:1.45;margin:0 0 8px;}
@@ -773,6 +779,7 @@ CHAPTERS.forEach((ch) => {
   div.dataset.chapterKey = ch.key;
   const paragraphs = ch.body.map(p => `<p>${p}</p>`).join('\n');
   const preview = truncateWords(ch.body[0], 90);
+  const tabTitle = truncateWords(ch.title, 18) + (ch.title.length > 18 ? '\u2026' : '');
   div.innerHTML = `
     <div class="leg-row">
       <div class="card">
@@ -788,7 +795,10 @@ CHAPTERS.forEach((ch) => {
       </div>
       <button class="collapse-btn" type="button" aria-label="Hide chapter text">
         <span class="chevron">&#8249;</span>
-        <span class="tab-label">HIDE</span>
+        <span class="tab-label">
+          <span class="label-hide">HIDE</span>
+          <span class="label-title">${tabTitle}</span>
+        </span>
       </button>
     </div>
   `;
@@ -811,14 +821,13 @@ storyEl.addEventListener('click', (e) => {
 // Collapse-all toggle (mobile only -- the button is hidden entirely on
 // desktop via CSS). Any one of the per-leg buttons on the right edge
 // collapses or expands every leg together, sliding left as a unit to
-// reveal the map -- not just the leg whose button was tapped.
+// reveal the map -- not just the leg whose button was tapped. Each tab
+// shows its own leg's title once collapsed (CSS-driven, since every
+// button needs different text -- not a uniform label swap).
 storyEl.addEventListener('click', (e) => {
   const btn = e.target.closest('.collapse-btn');
   if (!btn) return;
   const collapsed = storyEl.classList.toggle('legs-collapsed');
-  storyEl.querySelectorAll('.tab-label').forEach((el) => {
-    el.textContent = collapsed ? 'SHOW' : 'HIDE';
-  });
   storyEl.querySelectorAll('.collapse-btn').forEach((el) => {
     el.setAttribute('aria-label', collapsed ? 'Show chapter text' : 'Hide chapter text');
   });
