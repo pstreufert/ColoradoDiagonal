@@ -319,11 +319,10 @@
       transition:width .4s cubic-bezier(.4,0,.2,1), padding .4s cubic-bezier(.4,0,.2,1), opacity .3s ease;
     }
     .collapse-btn{
-      display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
       flex:0 0 34px;
       min-height:72px;
       margin:0;
-      padding-top:14px;
       background:var(--paper);
       border:none;border-top:5px solid var(--ochre);
       border-radius:0;
@@ -331,9 +330,14 @@
       outline:none;box-shadow:none;
       cursor:pointer;-webkit-tap-highlight-color:transparent;
     }
+    #story.legs-collapsed .collapse-btn{
+      justify-content:flex-start;
+      padding-top:14px;
+    }
+    #story.legs-collapsed .collapse-btn .tab-label{order:1;}
+    #story.legs-collapsed .collapse-btn .chevron{order:2;}
     .collapse-btn .chevron{
       color:var(--ochre);font-size:15px;line-height:1;
-      margin-bottom:14px;
       transition:transform .4s cubic-bezier(.4,0,.2,1);
     }
     .collapse-btn .tab-label{
@@ -341,7 +345,6 @@
       font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:0.1em;
       color:var(--ochre);
       white-space:nowrap;
-      padding-bottom:14px;
     }
     .collapse-btn .tab-label .label-title{display:none;}
     #story.legs-collapsed .collapse-btn .tab-label .label-hide{display:none;}
@@ -787,7 +790,7 @@ CHAPTERS.forEach((ch) => {
   div.dataset.chapterKey = ch.key;
   const paragraphs = ch.body.map(p => `<p>${p}</p>`).join('\n');
   const preview = truncateWords(ch.body[0], 90);
-  const tabTitle = `${ch.mileStart.toFixed(1)}\u2013${ch.mileEnd.toFixed(1)} MI`;
+  const tabTitle = `MILE ${ch.mileStart.toFixed(1)}\u2013${ch.mileEnd.toFixed(1)}`;
   div.innerHTML = `
     <div class="leg-row">
       <div class="card">
